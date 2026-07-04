@@ -141,27 +141,46 @@
 <div id="view-profile" class="view view-profile hidden">
 
     <div class="profile-nav">
+        <span class="profile-nav-brand">VISION<span class="brand-dim">CINE</span></span>
         <button id="profile-back-btn" class="btn-ghost">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             Back to Dashboard
         </button>
-        <span class="profile-nav-brand">VISION<span class="brand-dim">CINE</span></span>
+    </div>
+
+    <div class="profile-identity-banner">
+        <div class="profile-identity-left">
+            <div class="profile-avatar-wrap">
+                <div id="profile-avatar-lg" class="profile-avatar-lg">U</div>
+                <div class="profile-status-dot"></div>
+            </div>
+            <div class="profile-identity-meta">
+                <h2 id="profile-display-name" class="profile-display-name">—</h2>
+                <div class="profile-meta-row">
+                    <span class="profile-tier-badge">Standard Tier</span>
+                    <span class="profile-meta-sep"></span>
+                    <span class="profile-session-id" id="diag-token">—</span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-stats-row">
+            <div class="stat-chip">
+                <span class="stat-val" id="stat-events">0</span>
+                <span class="stat-label">Interactions</span>
+            </div>
+            <div class="stat-chip">
+                <span class="stat-val" id="stat-saved">0</span>
+                <span class="stat-label">Saved Titles</span>
+            </div>
+        </div>
     </div>
 
     <div class="profile-layout">
 
         <!-- LEFT: DIAGNOSTICS PANEL -->
         <aside class="profile-aside">
-            <div class="profile-id-card">
-                <div id="profile-avatar-lg" class="profile-avatar-lg">U</div>
-                <div>
-                    <p id="profile-display-name" class="profile-display-name">—</p>
-                    <p class="profile-tier-label">STANDARD TIER</p>
-                </div>
-            </div>
-
+            <h3 class="diag-section-label">System Diagnostics</h3>
             <div class="diagnostics-panel">
-                <p class="diag-heading">Account Diagnostics</p>
                 <div class="diag-grid">
                     <div class="diag-row">
                         <span class="diag-key">Security Status</span>
@@ -170,18 +189,6 @@
                     <div class="diag-row">
                         <span class="diag-key">Account Tier</span>
                         <span class="diag-val" id="diag-tier">Standard</span>
-                    </div>
-                    <div class="diag-row">
-                        <span class="diag-key">Session Token</span>
-                        <span class="diag-val mono" id="diag-token">—</span>
-                    </div>
-                    <div class="diag-row">
-                        <span class="diag-key">Interaction Events</span>
-                        <span class="diag-val mono" id="diag-events">0</span>
-                    </div>
-                    <div class="diag-row">
-                        <span class="diag-key">Saved Titles</span>
-                        <span class="diag-val mono" id="diag-saved">0</span>
                     </div>
                     <div class="diag-row">
                         <span class="diag-key">Session Start</span>

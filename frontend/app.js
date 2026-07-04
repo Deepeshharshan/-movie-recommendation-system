@@ -66,8 +66,8 @@ const DOM = {
     profileName:     document.getElementById('profile-display-name'),
     diagTier:        document.getElementById('diag-tier'),
     diagToken:       document.getElementById('diag-token'),
-    diagEvents:      document.getElementById('diag-events'),
-    diagSaved:       document.getElementById('diag-saved'),
+    statEvents:      document.getElementById('stat-events'),
+    statSaved:       document.getElementById('stat-saved'),
     diagSessionStart: document.getElementById('diag-session-start'),
     activityLogBody: document.getElementById('activity-log-body'),
     clearLogBtn:     document.getElementById('clear-log-btn'),
@@ -159,15 +159,23 @@ function renderActivityLog() {
         DOM.activityLogBody.innerHTML = `<tr class="log-empty-row"><td colspan="5">No interaction events recorded in this session.</td></tr>`;
         return;
     }
-    DOM.activityLogBody.innerHTML = STATE.activityLog.map(e => `
+    DOM.activityLogBody.innerHTML = STATE.activityLog.map(e => {
+        let badgeClass = 'view';
+        if (e.type.includes('AUTH')) badgeClass = 'auth';
+        if (e.type.includes('RATING')) badgeClass = 'rating';
+        if (e.type.includes('LIBRARY')) badgeClass = 'library';
+        if (e.type.includes('SEARCH')) badgeClass = 'search';
+
+        return `
         <tr>
-            <td>${e.id}</td>
-            <td>${e.type}</td>
-            <td>${e.reference}</td>
-            <td>${e.metric}</td>
-            <td>${e.timestamp}</td>
+            <td class="log-event-id">${e.id}</td>
+            <td><span class="log-type-badge ${badgeClass}">${e.type}</span></td>
+            <td class="log-reference">${e.reference}</td>
+            <td class="log-metric">${e.metric}</td>
+            <td class="log-timestamp">${e.timestamp}</td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // ─── Watchlist / Saved Library ─────────────────────────────────────────────────
@@ -184,19 +192,19 @@ function saveToLibrary(movie) {
     localStorage.setItem('vc_watchlist', JSON.stringify(STATE.watchlist));
     recordEvent('LIBRARY_SAVE', `"${movie.title}"`, '—');
     showToast(`"${movie.title}" saved to library.`, 'success');
-    DOM.diagSaved.textContent = STATE.watchlist.length;
+    DOM.statSaved.textContent = STATE.watchlist.length;
 }
 
 function removeFromLibrary(tmdbId) {
     STATE.watchlist = STATE.watchlist.filter(m => m.id !== tmdbId);
     localStorage.setItem('vc_watchlist', JSON.stringify(STATE.watchlist));
-    DOM.diagSaved.textContent = STATE.watchlist.length;
+    DOM.statSaved.textContent = STATE.watchlist.length;
     renderLibrary();
 }
 
 function renderLibrary() {
     DOM.libraryCount.textContent = `${STATE.watchlist.length} title${STATE.watchlist.length !== 1 ? 's' : ''}`;
-    DOM.diagSaved.textContent = STATE.watchlist.length;
+    DOM.statSaved.textContent = STATE.watchlist.length;
 
     if (STATE.watchlist.length === 0) {
         DOM.libraryGrid.innerHTML = `<p class="library-empty">No titles saved to your library.</p>`;
@@ -516,8 +524,8 @@ function openProfile() {
     DOM.profileName.textContent = STATE.user;
     DOM.profileAvLg.textContent = STATE.user ? STATE.user[0].toUpperCase() : 'U';
     DOM.diagToken.textContent   = `sess_${btoa(STATE.user).substring(0, 10)}`;
-    DOM.diagEvents.textContent  = STATE.activityLog.length;
-    DOM.diagSaved.textContent   = STATE.watchlist.length;
+    DOM.statEvents.textContent  = STATE.activityLog.length;
+    DOM.statSaved.textContent   = STATE.watchlist.length;
     DOM.diagSessionStart.textContent = STATE.sessionStart
         ? new Date(STATE.sessionStart).toISOString()
         : '—';
