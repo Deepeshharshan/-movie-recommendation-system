@@ -197,7 +197,7 @@ function saveToLibrary(movie) {
     }
     STATE.watchlist.push({ id: movie.id, title: movie.title, poster_path: movie.poster_path, year: (movie.release_date || '').substring(0, 4) });
     localStorage.setItem('vc_watchlist', JSON.stringify(STATE.watchlist));
-    recordEvent('LIBRARY_SAVE', `"${movie.title}"`, '—');
+    recordEvent('LIBRARY_SAVE', `"${movie.title}"`, `ID:${movie.id}`);
     showToast(`"${movie.title}" saved to library.`, 'success');
     DOM.statSaved.textContent = STATE.watchlist.length;
 }
@@ -619,7 +619,7 @@ DOM.rateSubmitBtn.addEventListener('click', async () => {
 
     try {
         const res = await API.rateMovie(STATE.activeMovieId, score);
-        recordEvent('RATING_SUBMIT', `"${title}"`, `Metric: ${score}.0`);
+        recordEvent('RATING_SUBMIT', `"${title}"`, `ID:${STATE.activeMovieId} | Metric:${score}.0`);
         showToast(`Rating submitted for "${title}".`, 'success');
         closeDetailsOverlay();
     } catch (_) {
