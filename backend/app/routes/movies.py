@@ -33,61 +33,9 @@ def _upsert_movie_from_tmdb(data):
 
 @movies_bp.route("/")
 def home():
-    try:
-        trending = tmdb_service.get_trending().get("results", [])[:12]
-        top_rated = tmdb_service.get_top_rated().get("results", [])[:12]
-        popular = tmdb_service.get_popular().get("results", [])[:12]
-        new_releases = tmdb_service._get("/movie/now_playing").get("results", [])[:12]
-    except TMDbError as e:
-        current_app.logger.warning(str(e))
-        trending, top_rated, popular, new_releases = [], [], [], []
-
-    for item in trending + top_rated + popular + new_releases:
-        item["poster_url"] = tmdb_service.poster_url(item.get("poster_path"))
-
-    # Featured hero movie: highest-popularity trending title with a backdrop
-    featured = None
-    for candidate in trending:
-        if candidate.get("backdrop_path"):
-            featured = candidate
-            break
-    if featured:
-        featured["backdrop_url"] = tmdb_service.backdrop_url(featured.get("backdrop_path"))
-
-    recommendations = []
     if current_user.is_authenticated:
-        recs = recommendation_engine.recommend(current_user, limit=12)
-        recommendations = [m.to_dict() for m in recs]
-        for r in recommendations:
-            r["poster_url"] = tmdb_service.poster_url(r.get("poster_path"))
-
-    recent_views = []
-    if current_user.is_authenticated:
-        views = (
-            ViewHistory.query.filter_by(user_id=current_user.id)
-            .order_by(ViewHistory.viewed_at.desc())
-            .limit(12)
-            .all()
-        )
-        seen_ids = set()
-        for v in views:
-            if v.movie_id in seen_ids:
-                continue
-            seen_ids.add(v.movie_id)
-            d = v.movie.to_dict()
-            d["poster_url"] = tmdb_service.poster_url(d.get("poster_path"))
-            recent_views.append(d)
-
-    return render_template(
-        "index.html",
-        featured=featured,
-        trending=trending,
-        top_rated=top_rated,
-        popular=popular,
-        new_releases=new_releases,
-        recommendations=recommendations,
-        recent_views=recent_views,
-    )
+        return render_template("index.html")
+    return render_template("landing.html")
 
 
 @movies_bp.route("/search")

@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block title %}Server Error - CineMatch{% endblock %}
-{% block content %}
-<section class="error-page">
-    <h1>500</h1>
-    <p>Something went wrong on our end.{% if message %} {{ message }}{% endif %}</p>
-    <a href="{{ url_for('movies.home') }}" class="btn-primary">Back to Home</a>
-</section>
-{% endblock %}
