@@ -116,31 +116,42 @@ authForm.addEventListener('submit', async (e) => {
     const password = passwordInput.value.trim();
     const isLogin = authModeInput.value === 'login';
     
-    if (!username || !password) return;
+    if (!username || !password) {
+        showAuthNotification('Please fill in all fields.');
+        return;
+    }
+
+    if (password.length < 6) {
+        showAuthNotification('Password must be at least 6 characters.');
+        return;
+    }
     
     // UI Loading state
     submitBtnText.classList.add('hidden');
     loginSpinner.classList.remove('hidden');
     
     try {
-        const action = isLogin ? API.login : API.register;
-        const result = await action(username, password);
+        // Use .call(API) to preserve `this` context
+        const result = isLogin
+            ? await API.login(username, password)
+            : await API.register(username, password);
         
         if (result.success) {
-            // SUCCESS! 
-            localStorage.setItem('movie_user', username);
+            // Save user session
             API.setCurrentUser(username);
-            
-            if (!isLogin) {
-                // If it was register, switch to login silently or just login directly
-                // (Flask backend logs them in on register automatically)
-            }
-            
-            // Execute the Cinematic Reveal
-            transitionToDashboard();
+            navUsername.textContent = username;
+
+            // Show welcome message inside the auth card briefly, then reveal dashboard
+            const welcomeMsg = isLogin ? `Welcome back, ${username}!` : `Account created! Welcome, ${username}!`;
+            showAuthNotification(welcomeMsg, 'success');
+
+            // Short delay so user sees the success message, then cinematic reveal
+            setTimeout(() => {
+                transitionToDashboard();
+            }, 800);
             
         } else {
-            showAuthNotification(result.error || 'Authentication failed.');
+            showAuthNotification(result.error || (isLogin ? 'Invalid credentials.' : 'Registration failed. Try a different username.'));
         }
     } catch (err) {
         showAuthNotification('Network error. Please ensure backend is running.');

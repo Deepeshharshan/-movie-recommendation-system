@@ -529,3 +529,10 @@ body {
     font-weight: 500;
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
+
+/* Auth notification success variant */
+.auth-notification.success {
+    background: rgba(48, 209, 88, 0.2);
+    border-color: rgba(48, 209, 88, 0.4);
+    color: #a6f7b9;
+}
