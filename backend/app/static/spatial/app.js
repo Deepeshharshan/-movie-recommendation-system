@@ -323,6 +323,15 @@ const FILTER_LABELS = {
     watchlist: 'Saved Library',
 };
 
+// Simple array shuffler (Fisher-Yates)
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 async function loadMovies(filter = 'all') {
     STATE.currentFilter = filter;
     DOM.sectionLabel.textContent = FILTER_LABELS[filter] || 'Titles';
@@ -336,7 +345,15 @@ async function loadMovies(filter = 'all') {
     try {
         const endpoint = FILTER_ENDPOINTS[filter] || FILTER_ENDPOINTS.all;
         const data = await API.fetchTMDB(endpoint);
-        STATE.allMovies = data.results || [];
+        
+        let results = data.results || [];
+        
+        // Randomize the order if it's a general list so the dashboard looks fresh every time
+        if (filter === 'all' || filter === 'trending') {
+            results = shuffleArray([...results]);
+        }
+        
+        STATE.allMovies = results;
         renderMovieGrid(STATE.allMovies);
 
         if (filter === 'all' || filter === 'trending') {
