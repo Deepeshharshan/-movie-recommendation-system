@@ -1,0 +1,63 @@
+# =============================================================================
+# VISIONCINE — .dockerignore
+# Keep the image lean: exclude dev artifacts, secrets, caches, and OS files
+# =============================================================================
+
+# ── Python byte-code & caches ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Secrets & environment files ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── SQLite database file (use a volume in production) ────────────────────────
+instance/app.db
+instance/*.db
+*.db
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+tests/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+docs/
+README.md
+*.md
+
+# ── IDE & editor files ────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*.DS_Store
+.DS_Store
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ── Build & distribution artifacts ───────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
