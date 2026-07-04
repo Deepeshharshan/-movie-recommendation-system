@@ -59,6 +59,11 @@ const DOM = {
     sectionLabel:    document.getElementById('section-label'),
     sectionCount:    document.getElementById('section-count'),
     movieGrid:       document.getElementById('movie-grid'),
+    
+    // For You Section
+    foryouSection:   document.getElementById('foryou-section'),
+    foryouLabel:     document.getElementById('foryou-label'),
+    foryouGrid:      document.getElementById('foryou-grid'),
 
     // Profile
     profileBackBtn:  document.getElementById('profile-back-btn'),
@@ -93,6 +98,8 @@ const DOM = {
     detailsRating:   document.getElementById('details-rating'),
     detailsGenres:   document.getElementById('details-genres'),
     detailsOverview: document.getElementById('details-overview'),
+    detailsCastSection: document.getElementById('details-cast-section'),
+    detailsCastRow:  document.getElementById('details-cast-row'),
     detailsTrailerBtn: document.getElementById('details-trailer-btn'),
     detailsSaveBtn:  document.getElementById('details-save-btn'),
     rateSelect:      document.getElementById('rate-select'),
@@ -306,6 +313,27 @@ function renderMovieGrid(movies) {
     });
 }
 
+function renderForYouGrid(movies) {
+    if (!movies || movies.length === 0) {
+        DOM.foryouSection.style.display = 'none';
+        return;
+    }
+    DOM.foryouSection.style.display = 'block';
+    DOM.foryouGrid.innerHTML = movies.filter(m => m.poster_path).slice(0, 6).map(m => `
+        <div class="movie-card" data-id="${m.id}" data-title="${(m.title || '').replace(/"/g, '&quot;')}">
+            <img class="movie-card-img" src="https://image.tmdb.org/t/p/w500${m.poster_path}" alt="${m.title || ''}" loading="lazy">
+            <div class="movie-card-overlay">
+                <p class="movie-card-title">${m.title || m.original_title || ''}</p>
+                <p class="movie-card-year">${(m.release_date || '').substring(0, 4)}</p>
+            </div>
+        </div>
+    `).join('');
+
+    DOM.foryouGrid.querySelectorAll('.movie-card').forEach(card => {
+        card.addEventListener('click', () => openDetailsOverlay(parseInt(card.dataset.id, 10)));
+    });
+}
+
 // ─── Fetch + Display Movies by Filter ─────────────────────────────────────────
 const FILTER_ENDPOINTS = {
     all:       '/trending/movie/week',
@@ -359,6 +387,47 @@ async function loadMovies(filter = 'all') {
         if (filter === 'all' || filter === 'trending') {
             const withBackdrop = STATE.allMovies.find(m => m.backdrop_path);
             if (withBackdrop) renderHero(withBackdrop);
+            
+            // Build "For You" Section
+            if (STATE.activityLog.length > 0) {
+                // Find latest movie view or rating
+                const latestMovieEvent = STATE.activityLog.find(e => 
+                    e.type === 'DETAIL_VIEW' || e.type === 'RATING_SUBMIT' || e.type === 'LIBRARY_SAVE'
+                );
+                
+                if (latestMovieEvent && latestMovieEvent.reference) {
+                    const match = latestMovieEvent.metric.match(/ID:(\d+)/);
+                    if (match && match[1]) {
+                        const baseTitle = latestMovieEvent.reference.replace(/"/g, '');
+                        DOM.foryouLabel.textContent = `"${baseTitle}"`;
+                        
+                        try {
+                            const recData = await API.fetchTMDB(`/movie/${match[1]}/recommendations`);
+                            renderForYouGrid(recData.results || []);
+                        } catch(e) {
+                            DOM.foryouSection.style.display = 'none';
+                        }
+                    } else if (STATE.watchlist.length > 0) {
+                        // Fallback to latest watchlist item
+                        const lastSaved = STATE.watchlist[STATE.watchlist.length - 1];
+                        DOM.foryouLabel.textContent = `"${lastSaved.title}"`;
+                        try {
+                            const recData = await API.fetchTMDB(`/movie/${lastSaved.id}/recommendations`);
+                            renderForYouGrid(recData.results || []);
+                        } catch(e) {
+                            DOM.foryouSection.style.display = 'none';
+                        }
+                    } else {
+                        DOM.foryouSection.style.display = 'none';
+                    }
+                } else {
+                    DOM.foryouSection.style.display = 'none';
+                }
+            } else {
+                DOM.foryouSection.style.display = 'none';
+            }
+        } else {
+            DOM.foryouSection.style.display = 'none';
         }
     } catch (err) {
         console.error('loadMovies error:', err);
@@ -449,6 +518,8 @@ async function openDetailsOverlay(tmdbId) {
     DOM.detailsYear.textContent = '';
     DOM.detailsRuntime.textContent = '';
     DOM.detailsRating.textContent = '';
+    DOM.detailsCastSection.classList.add('hidden');
+    DOM.detailsCastRow.innerHTML = '';
 
     try {
         const movie = await API.fetchTMDB(`/movie/${tmdbId}`);
@@ -470,6 +541,29 @@ async function openDetailsOverlay(tmdbId) {
         DOM.detailsGenres.innerHTML = (movie.genres || [])
             .map(g => `<span class="genre-chip">${g.name}</span>`)
             .join('');
+
+        // Fetch Credits (Cast)
+        try {
+            const credits = await API.fetchTMDB(`/movie/${tmdbId}/credits`);
+            const cast = (credits.cast || []).slice(0, 10);
+            
+            if (cast.length > 0) {
+                DOM.detailsCastRow.innerHTML = cast.map(c => {
+                    const imgUrl = c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : '';
+                    const avatarContent = imgUrl 
+                        ? `<img class="cast-avatar" src="${imgUrl}" alt="${c.name}" loading="lazy">`
+                        : `<div class="cast-avatar no-img">${c.name.charAt(0)}</div>`;
+                        
+                    return `
+                    <div class="cast-card">
+                        ${avatarContent}
+                        <span class="cast-name">${c.name}</span>
+                        <span class="cast-role">${c.character}</span>
+                    </div>`;
+                }).join('');
+                DOM.detailsCastSection.classList.remove('hidden');
+            }
+        } catch (_) { /* ignore cast fetch errors */ }
 
         // Get trailer
         const videos = await API.fetchTMDB(`/movie/${tmdbId}/videos`);

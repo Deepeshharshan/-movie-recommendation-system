@@ -122,6 +122,16 @@
         </div>
     </div>
 
+    <!-- NEW: FOR YOU SECTION -->
+    <div class="content-area" id="foryou-section" style="display: none; padding-bottom: 0;">
+        <div class="section-header">
+            <div>
+                <h3 class="section-label">Because You Liked <span id="foryou-label" style="color:var(--text-primary);"></span></h3>
+            </div>
+        </div>
+        <div id="foryou-grid" class="movie-grid" style="margin-top: 1rem;"></div>
+    </div>
+
     <!-- CONTENT AREA -->
     <main class="content-area">
         <div class="section-header">
@@ -287,6 +297,12 @@
                 </div>
                 <div id="details-genres" class="details-genres"></div>
                 <p id="details-overview" class="details-overview"></p>
+
+                <!-- NEW: CAST & CREW -->
+                <div class="details-cast-section hidden" id="details-cast-section">
+                    <p class="rate-block-label" style="margin-bottom: 0.8rem;">Top Cast</p>
+                    <div class="cast-row" id="details-cast-row"></div>
+                </div>
 
                 <div class="details-actions">
                     <button id="details-trailer-btn" class="btn-primary">
