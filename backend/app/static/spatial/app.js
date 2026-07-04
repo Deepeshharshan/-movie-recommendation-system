@@ -1,291 +1,659 @@
-// ==========================================================================
-// VISIONCINE SPA ROUTING & LOGIC
-// ==========================================================================
+/* ==========================================================================
+   VISIONCINE — APPLICATION CONTROLLER
+   ========================================================================== */
 
-// ─── Elements ─────────────────────────────────────────────────────────────
-const authGate = document.getElementById('auth-gate');
-const dashboardLayer = document.getElementById('dashboard-layer');
+'use strict';
 
-// Auth Gate Elements
-const authForm = document.getElementById('auth-form');
-const usernameInput = document.getElementById('username');
-const passwordInput = document.getElementById('password');
-const authModeInput = document.getElementById('auth-mode');
-const toggleAuthModeBtn = document.getElementById('toggle-auth-mode');
-const toggleMsg = document.getElementById('toggle-msg');
-const authHeader = document.querySelector('.auth-header');
-const submitBtnText = document.querySelector('.btn-text');
-const authNotification = document.getElementById('auth-notification');
-const loginSpinner = document.getElementById('login-spinner');
+// ─── Global State ─────────────────────────────────────────────────────────────
+const STATE = {
+    user:           null,
+    currentFilter:  'all',
+    heroMovieId:    null,
+    heroTrailerKey: null,
+    activeMovieId:  null,
+    activeMovieData: null,
+    allMovies:      [],
+    watchlist:      JSON.parse(localStorage.getItem('vc_watchlist') || '[]'),
+    activityLog:    JSON.parse(localStorage.getItem('vc_activity_log') || '[]'),
+    sessionStart:   null,
+    eventCounter:   parseInt(localStorage.getItem('vc_event_counter') || '4000', 10),
+};
 
-// Dashboard Elements
-const navUsername = document.getElementById('nav-username');
-const logoutBtn = document.getElementById('logout-btn');
-const heroTitle = document.getElementById('hero-title');
-const heroDesc = document.getElementById('hero-desc');
-const heroShowcase = document.getElementById('hero-showcase');
-const movieGrid = document.getElementById('movie-grid');
+// ─── DOM References ────────────────────────────────────────────────────────────
+const DOM = {
+    // Views
+    viewAuth:      document.getElementById('view-auth'),
+    viewDashboard: document.getElementById('view-dashboard'),
+    viewProfile:   document.getElementById('view-profile'),
 
-// Feedback Alert
-const feedbackLayer = document.getElementById('feedback-layer');
-const feedbackMessage = document.getElementById('feedback-message');
+    // Auth
+    authForm:        document.getElementById('auth-form'),
+    authMode:        document.getElementById('auth-mode'),
+    authTitle:       document.getElementById('auth-title'),
+    authSubtitle:    document.getElementById('auth-subtitle'),
+    authAlert:       document.getElementById('auth-alert'),
+    authSubmit:      document.getElementById('auth-submit'),
+    authBtnLabel:    document.getElementById('auth-btn-label'),
+    authSpinner:     document.getElementById('auth-spinner'),
+    authToggleBtn:   document.getElementById('auth-toggle-btn'),
+    authToggleMsg:   document.getElementById('auth-toggle-msg'),
+    inpUsername:     document.getElementById('inp-username'),
+    inpPassword:     document.getElementById('inp-password'),
 
-// ─── State Management ─────────────────────────────────────────────────────
-function checkAuthAndRoute() {
-    // Check localStorage (simulating token/user persistence)
-    const user = localStorage.getItem('movie_user');
-    
-    if (user) {
-        // Logged in: Reveal Dashboard
-        navUsername.textContent = user;
-        transitionToDashboard();
-    } else {
-        // Not logged in: Show Auth Gate
-        authGate.classList.remove('fade-out');
-        dashboardLayer.classList.add('hidden');
-        dashboardLayer.classList.remove('revealed');
+    // Navbar
+    mainNav:         document.getElementById('main-nav'),
+    navAvatar:       document.getElementById('nav-avatar'),
+    navProfileBtn:   document.getElementById('nav-profile-btn'),
+    navLogoutBtn:    document.getElementById('nav-logout-btn'),
+    searchInput:     document.getElementById('search-input'),
+
+    // Dashboard
+    heroSection:     document.getElementById('hero-section'),
+    heroBg:          document.getElementById('hero-bg'),
+    heroBadge:       document.getElementById('hero-badge'),
+    heroTitle:       document.getElementById('hero-title'),
+    heroDesc:        document.getElementById('hero-desc'),
+    heroTrailerBtn:  document.getElementById('hero-trailer-btn'),
+    heroInfoBtn:     document.getElementById('hero-info-btn'),
+    filterRail:      document.getElementById('filter-rail'),
+    sectionLabel:    document.getElementById('section-label'),
+    sectionCount:    document.getElementById('section-count'),
+    movieGrid:       document.getElementById('movie-grid'),
+
+    // Profile
+    profileBackBtn:  document.getElementById('profile-back-btn'),
+    profileAvLg:     document.getElementById('profile-avatar-lg'),
+    profileName:     document.getElementById('profile-display-name'),
+    diagTier:        document.getElementById('diag-tier'),
+    diagToken:       document.getElementById('diag-token'),
+    diagEvents:      document.getElementById('diag-events'),
+    diagSaved:       document.getElementById('diag-saved'),
+    diagSessionStart: document.getElementById('diag-session-start'),
+    activityLogBody: document.getElementById('activity-log-body'),
+    clearLogBtn:     document.getElementById('clear-log-btn'),
+    libraryGrid:     document.getElementById('library-grid'),
+    libraryCount:    document.getElementById('library-count'),
+
+    // Trailer Overlay
+    trailerOverlay:  document.getElementById('trailer-overlay'),
+    trailerIframe:   document.getElementById('trailer-iframe'),
+    trailerPlaceholder: document.getElementById('trailer-placeholder'),
+    trailerTitleLabel: document.getElementById('trailer-title-label'),
+    trailerCloseBtn: document.getElementById('trailer-close-btn'),
+    trailerBackdrop: document.getElementById('trailer-backdrop'),
+
+    // Details Overlay
+    detailsOverlay:  document.getElementById('details-overlay'),
+    detailsCloseBtn: document.getElementById('details-close-btn'),
+    detailsBackdrop: document.getElementById('details-backdrop'),
+    detailsPoster:   document.getElementById('details-poster'),
+    detailsTitle:    document.getElementById('details-title'),
+    detailsYear:     document.getElementById('details-year'),
+    detailsRuntime:  document.getElementById('details-runtime'),
+    detailsRating:   document.getElementById('details-rating'),
+    detailsGenres:   document.getElementById('details-genres'),
+    detailsOverview: document.getElementById('details-overview'),
+    detailsTrailerBtn: document.getElementById('details-trailer-btn'),
+    detailsSaveBtn:  document.getElementById('details-save-btn'),
+    rateSelect:      document.getElementById('rate-select'),
+    rateSubmitBtn:   document.getElementById('rate-submit-btn'),
+
+    toastLayer:      document.getElementById('toast-layer'),
+};
+
+// ─── Toast Notification System ─────────────────────────────────────────────────
+function showToast(message, type = 'info', duration = 3200) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast-dot"></div><span>${message}</span>`;
+    DOM.toastLayer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('removing');
+        toast.addEventListener('animationend', () => toast.remove());
+    }, duration);
+}
+
+// ─── Auth Alert (inline within auth card) ─────────────────────────────────────
+function showAuthAlert(message, type = 'error') {
+    DOM.authAlert.textContent = message;
+    DOM.authAlert.className = `auth-alert ${type}`;
+    DOM.authAlert.classList.remove('hidden');
+}
+
+function clearAuthAlert() {
+    DOM.authAlert.classList.add('hidden');
+    DOM.authAlert.className = 'auth-alert hidden';
+}
+
+// ─── View Router ───────────────────────────────────────────────────────────────
+function showView(viewEl) {
+    [DOM.viewAuth, DOM.viewDashboard, DOM.viewProfile].forEach(v => {
+        v.classList.remove('active');
+        v.classList.add('hidden');
+    });
+    viewEl.classList.remove('hidden');
+    requestAnimationFrame(() => viewEl.classList.add('active'));
+}
+
+// ─── Activity Log ──────────────────────────────────────────────────────────────
+function recordEvent(type, reference, metric = '—') {
+    STATE.eventCounter++;
+    localStorage.setItem('vc_event_counter', STATE.eventCounter);
+
+    const event = {
+        id:        STATE.eventCounter,
+        type,
+        reference,
+        metric,
+        timestamp: new Date().toISOString(),
+    };
+
+    STATE.activityLog.unshift(event);
+    if (STATE.activityLog.length > 100) STATE.activityLog.pop();
+    localStorage.setItem('vc_activity_log', JSON.stringify(STATE.activityLog));
+}
+
+function renderActivityLog() {
+    if (STATE.activityLog.length === 0) {
+        DOM.activityLogBody.innerHTML = `<tr class="log-empty-row"><td colspan="5">No interaction events recorded in this session.</td></tr>`;
+        return;
+    }
+    DOM.activityLogBody.innerHTML = STATE.activityLog.map(e => `
+        <tr>
+            <td>${e.id}</td>
+            <td>${e.type}</td>
+            <td>${e.reference}</td>
+            <td>${e.metric}</td>
+            <td>${e.timestamp}</td>
+        </tr>
+    `).join('');
+}
+
+// ─── Watchlist / Saved Library ─────────────────────────────────────────────────
+function isInWatchlist(tmdbId) {
+    return STATE.watchlist.some(m => m.id === tmdbId);
+}
+
+function saveToLibrary(movie) {
+    if (isInWatchlist(movie.id)) {
+        showToast('Title already in your library.', 'info');
+        return;
+    }
+    STATE.watchlist.push({ id: movie.id, title: movie.title, poster_path: movie.poster_path, year: (movie.release_date || '').substring(0, 4) });
+    localStorage.setItem('vc_watchlist', JSON.stringify(STATE.watchlist));
+    recordEvent('LIBRARY_SAVE', `"${movie.title}"`, '—');
+    showToast(`"${movie.title}" saved to library.`, 'success');
+    DOM.diagSaved.textContent = STATE.watchlist.length;
+}
+
+function removeFromLibrary(tmdbId) {
+    STATE.watchlist = STATE.watchlist.filter(m => m.id !== tmdbId);
+    localStorage.setItem('vc_watchlist', JSON.stringify(STATE.watchlist));
+    DOM.diagSaved.textContent = STATE.watchlist.length;
+    renderLibrary();
+}
+
+function renderLibrary() {
+    DOM.libraryCount.textContent = `${STATE.watchlist.length} title${STATE.watchlist.length !== 1 ? 's' : ''}`;
+    DOM.diagSaved.textContent = STATE.watchlist.length;
+
+    if (STATE.watchlist.length === 0) {
+        DOM.libraryGrid.innerHTML = `<p class="library-empty">No titles saved to your library.</p>`;
+        return;
+    }
+
+    DOM.libraryGrid.innerHTML = STATE.watchlist.map(m => `
+        <div class="library-card">
+            <img src="https://image.tmdb.org/t/p/w300${m.poster_path}" alt="${m.title}" loading="lazy">
+            <button class="library-remove-btn" data-id="${m.id}" title="Remove" aria-label="Remove ${m.title}">&times;</button>
+        </div>
+    `).join('');
+
+    DOM.libraryGrid.querySelectorAll('.library-remove-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeFromLibrary(parseInt(btn.dataset.id, 10));
+        });
+    });
+}
+
+// ─── Skeleton Loaders ──────────────────────────────────────────────────────────
+function renderSkeletonGrid(count = 12) {
+    DOM.movieGrid.innerHTML = Array.from({ length: count }, () =>
+        `<div class="skeleton-card"></div>`
+    ).join('');
+}
+
+function resetHeroSkeleton() {
+    DOM.heroBadge.className = 'hero-badge skeleton-inline';
+    DOM.heroBadge.style.cssText = 'width:90px;height:22px';
+    DOM.heroBadge.textContent = '';
+    DOM.heroTitle.className = 'hero-title skeleton-block';
+    DOM.heroTitle.style.cssText = 'width:60%;height:56px;margin-bottom:1rem';
+    DOM.heroTitle.textContent = '';
+    DOM.heroDesc.className = 'hero-desc skeleton-block';
+    DOM.heroDesc.style.cssText = 'width:45%;height:64px;margin-bottom:2rem';
+    DOM.heroDesc.textContent = '';
+    DOM.heroTrailerBtn.className = 'btn-primary btn-hero skeleton-btn';
+    DOM.heroInfoBtn.className = 'btn-ghost btn-hero skeleton-btn';
+    DOM.heroBg.style.backgroundImage = '';
+}
+
+// ─── Render Hero ───────────────────────────────────────────────────────────────
+async function renderHero(movie) {
+    STATE.heroMovieId = movie.id;
+    STATE.heroTrailerKey = null;
+
+    DOM.heroBg.style.backgroundImage = movie.backdrop_path
+        ? `url(https://image.tmdb.org/t/p/original${movie.backdrop_path})`
+        : '';
+
+    DOM.heroBadge.className = 'hero-badge';
+    DOM.heroBadge.style.cssText = '';
+    DOM.heroBadge.textContent = 'FEATURED TITLE';
+
+    DOM.heroTitle.className = 'hero-title';
+    DOM.heroTitle.style.cssText = '';
+    DOM.heroTitle.textContent = movie.title || movie.original_title;
+
+    DOM.heroDesc.className = 'hero-desc';
+    DOM.heroDesc.style.cssText = '';
+    DOM.heroDesc.textContent = movie.overview
+        ? (movie.overview.length > 180 ? movie.overview.substring(0, 180) + '…' : movie.overview)
+        : 'No synopsis available.';
+
+    DOM.heroTrailerBtn.className = 'btn-primary btn-hero';
+    DOM.heroInfoBtn.className = 'btn-ghost btn-hero';
+
+    // Fetch trailer key in background
+    try {
+        const data = await API.fetchTMDB(`/movie/${movie.id}/videos`);
+        const trailer = (data.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer');
+        STATE.heroTrailerKey = trailer ? trailer.key : null;
+    } catch (_) { STATE.heroTrailerKey = null; }
+}
+
+// ─── Render Movie Grid ─────────────────────────────────────────────────────────
+function renderMovieGrid(movies) {
+    DOM.sectionCount.textContent = `${movies.length} title${movies.length !== 1 ? 's' : ''}`;
+
+    if (movies.length === 0) {
+        DOM.movieGrid.innerHTML = `<p style="grid-column:1/-1;color:var(--text-tertiary);font-size:0.875rem;">No titles match the selected filter.</p>`;
+        return;
+    }
+
+    DOM.movieGrid.innerHTML = movies.filter(m => m.poster_path).map(m => `
+        <div class="movie-card" data-id="${m.id}" data-title="${(m.title || '').replace(/"/g, '&quot;')}">
+            <img class="movie-card-img" src="https://image.tmdb.org/t/p/w500${m.poster_path}" alt="${m.title || ''}" loading="lazy">
+            <div class="movie-card-overlay">
+                <p class="movie-card-title">${m.title || m.original_title || ''}</p>
+                <p class="movie-card-year">${(m.release_date || '').substring(0, 4)}</p>
+            </div>
+        </div>
+    `).join('');
+
+    DOM.movieGrid.querySelectorAll('.movie-card').forEach(card => {
+        card.addEventListener('click', () => openDetailsOverlay(parseInt(card.dataset.id, 10)));
+    });
+}
+
+// ─── Fetch + Display Movies by Filter ─────────────────────────────────────────
+const FILTER_ENDPOINTS = {
+    all:       '/trending/movie/week',
+    trending:  '/trending/movie/day',
+    top_rated: '/movie/top_rated',
+    release:   '/movie/now_playing',
+    watchlist: null,
+};
+
+const FILTER_LABELS = {
+    all:       'Recommended Titles',
+    trending:  'Trending Index',
+    top_rated: 'High Rated Core',
+    release:   'Chronological Release',
+    watchlist: 'Saved Library',
+};
+
+async function loadMovies(filter = 'all') {
+    STATE.currentFilter = filter;
+    DOM.sectionLabel.textContent = FILTER_LABELS[filter] || 'Titles';
+    renderSkeletonGrid();
+
+    if (filter === 'watchlist') {
+        renderMovieGrid(STATE.watchlist.map(m => ({ ...m, poster_path: m.poster_path })));
+        return;
+    }
+
+    try {
+        const endpoint = FILTER_ENDPOINTS[filter] || FILTER_ENDPOINTS.all;
+        const data = await API.fetchTMDB(endpoint);
+        STATE.allMovies = data.results || [];
+        renderMovieGrid(STATE.allMovies);
+
+        if (filter === 'all' || filter === 'trending') {
+            const withBackdrop = STATE.allMovies.find(m => m.backdrop_path);
+            if (withBackdrop) renderHero(withBackdrop);
+        }
+    } catch (err) {
+        console.error('loadMovies error:', err);
+        DOM.movieGrid.innerHTML = `<p style="grid-column:1/-1;color:var(--text-tertiary);font-size:0.875rem;">Failed to load titles. Check your connection.</p>`;
+        showToast('Failed to load movie data.', 'error');
     }
 }
 
-function transitionToDashboard() {
-    // Hardware accelerated cinematic fade out
-    authGate.classList.add('fade-out');
-    
-    // Wait for fade out to complete before showing dashboard
-    setTimeout(() => {
-        dashboardLayer.classList.remove('hidden');
-        // Trigger CSS reflow to ensure transition works
-        void dashboardLayer.offsetWidth; 
-        dashboardLayer.classList.add('revealed');
-        
-        // Fetch data for dashboard
-        loadDashboardData();
-    }, 800); // matches the 0.8s CSS transition
+// ─── Search ────────────────────────────────────────────────────────────────────
+let _searchTimer = null;
+
+DOM.searchInput.addEventListener('input', (e) => {
+    clearTimeout(_searchTimer);
+    const q = e.target.value.trim();
+
+    if (!q) {
+        loadMovies(STATE.currentFilter);
+        return;
+    }
+
+    _searchTimer = setTimeout(async () => {
+        renderSkeletonGrid();
+        DOM.sectionLabel.textContent = `Results for "${q}"`;
+        try {
+            const data = await API.fetchTMDB(`/search/movie?query=${encodeURIComponent(q)}`);
+            const results = (data.results || []).slice(0, 18);
+            DOM.sectionCount.textContent = `${results.length} result${results.length !== 1 ? 's' : ''}`;
+            renderMovieGrid(results);
+            recordEvent('SEARCH_QUERY', `"${q}"`, `${results.length} results`);
+        } catch (_) {
+            showToast('Search request failed.', 'error');
+        }
+    }, 450);
+});
+
+// ─── Filter Rail ───────────────────────────────────────────────────────────────
+DOM.filterRail.addEventListener('click', (e) => {
+    const tag = e.target.closest('.filter-tag');
+    if (!tag) return;
+    DOM.filterRail.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    loadMovies(tag.dataset.filter);
+});
+
+// ─── Trailer Overlay ───────────────────────────────────────────────────────────
+function openTrailerOverlay(trailerKey, movieTitle = '') {
+    DOM.trailerTitleLabel.textContent = movieTitle ? `${movieTitle} — Official Trailer` : 'Official Trailer';
+    DOM.trailerIframe.src = '';
+
+    if (trailerKey) {
+        DOM.trailerIframe.src = `https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0&modestbranding=1`;
+        DOM.trailerIframe.classList.remove('hidden');
+        DOM.trailerPlaceholder.classList.add('hidden');
+    } else {
+        DOM.trailerIframe.classList.add('hidden');
+        DOM.trailerPlaceholder.classList.remove('hidden');
+    }
+
+    DOM.trailerOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 }
 
-function showAuthNotification(msg, type = 'error') {
-    authNotification.textContent = msg;
-    authNotification.classList.remove('hidden');
-    if (type === 'error') {
-        authNotification.style.background = 'rgba(255, 59, 48, 0.2)';
-        authNotification.style.borderColor = 'rgba(255, 59, 48, 0.4)';
-        authNotification.style.color = '#ffb3b0';
-    } else {
-        authNotification.style.background = 'rgba(48, 209, 88, 0.2)';
-        authNotification.style.borderColor = 'rgba(48, 209, 88, 0.4)';
-        authNotification.style.color = '#a6f7b9';
+function closeTrailerOverlay() {
+    DOM.trailerOverlay.classList.add('hidden');
+    DOM.trailerIframe.src = '';
+    document.body.style.overflow = '';
+}
+
+DOM.heroTrailerBtn.addEventListener('click', () => {
+    if (STATE.heroMovieId) {
+        const title = DOM.heroTitle.textContent;
+        recordEvent('TRAILER_VIEW', `"${title}"`, '—');
+        openTrailerOverlay(STATE.heroTrailerKey, title);
+    }
+});
+DOM.trailerCloseBtn.addEventListener('click', closeTrailerOverlay);
+DOM.trailerBackdrop.addEventListener('click', closeTrailerOverlay);
+
+// ─── Details Overlay ───────────────────────────────────────────────────────────
+async function openDetailsOverlay(tmdbId) {
+    DOM.detailsOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    DOM.detailsPoster.src = '';
+    DOM.detailsTitle.textContent = 'Loading…';
+    DOM.detailsOverview.textContent = '';
+    DOM.detailsGenres.innerHTML = '';
+    DOM.detailsYear.textContent = '';
+    DOM.detailsRuntime.textContent = '';
+    DOM.detailsRating.textContent = '';
+
+    try {
+        const movie = await API.fetchTMDB(`/movie/${tmdbId}`);
+        STATE.activeMovieId   = tmdbId;
+        STATE.activeMovieData = movie;
+
+        DOM.detailsPoster.src = movie.poster_path
+            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            : '';
+        DOM.detailsPoster.alt = movie.title || '';
+        DOM.detailsTitle.textContent = movie.title || movie.original_title;
+        DOM.detailsYear.textContent  = (movie.release_date || '').substring(0, 4);
+        DOM.detailsRuntime.textContent = movie.runtime ? `${movie.runtime} min` : '—';
+        DOM.detailsRating.textContent = movie.vote_average
+            ? `${movie.vote_average.toFixed(1)} / 10`
+            : '—';
+        DOM.detailsOverview.textContent = movie.overview || 'No synopsis available.';
+
+        DOM.detailsGenres.innerHTML = (movie.genres || [])
+            .map(g => `<span class="genre-chip">${g.name}</span>`)
+            .join('');
+
+        // Get trailer
+        const videos = await API.fetchTMDB(`/movie/${tmdbId}/videos`);
+        const trailer = (videos.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer');
+        STATE.activeTrailerKey = trailer ? trailer.key : null;
+
+        // Update save button
+        DOM.detailsSaveBtn.textContent = isInWatchlist(tmdbId) ? 'Saved to Library' : 'Save to Library';
+        DOM.detailsSaveBtn.disabled = isInWatchlist(tmdbId);
+
+        recordEvent('DETAIL_VIEW', `"${movie.title}"`, `ID:${tmdbId}`);
+
+    } catch (err) {
+        DOM.detailsTitle.textContent = 'Failed to load title data.';
+        showToast('Could not retrieve movie details.', 'error');
     }
 }
 
-function showSpatialAlert(msg) {
-    feedbackMessage.textContent = msg;
-    feedbackLayer.classList.remove('hidden');
-    setTimeout(() => {
-        feedbackLayer.classList.add('hidden');
-    }, 3000);
+function closeDetailsOverlay() {
+    DOM.detailsOverlay.classList.add('hidden');
+    document.body.style.overflow = '';
 }
 
-// ─── Auth Logic ───────────────────────────────────────────────────────────
+DOM.detailsCloseBtn.addEventListener('click', closeDetailsOverlay);
+DOM.detailsBackdrop.addEventListener('click', closeDetailsOverlay);
 
-// Toggle Login / Register
-toggleAuthModeBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    authNotification.classList.add('hidden');
-    
-    if (authModeInput.value === 'login') {
-        authModeInput.value = 'register';
-        authHeader.textContent = 'Create Account';
-        submitBtnText.textContent = 'Sign Up';
-        toggleMsg.textContent = 'Already have an account?';
-        toggleAuthModeBtn.textContent = 'Log In';
-    } else {
-        authModeInput.value = 'login';
-        authHeader.textContent = 'Access Portal';
-        submitBtnText.textContent = 'Sign In';
-        toggleMsg.textContent = 'Need access?';
-        toggleAuthModeBtn.textContent = 'Create Account';
+DOM.heroInfoBtn.addEventListener('click', () => {
+    if (STATE.heroMovieId) openDetailsOverlay(STATE.heroMovieId);
+});
+
+DOM.detailsTrailerBtn.addEventListener('click', () => {
+    if (STATE.activeMovieData) {
+        openTrailerOverlay(STATE.activeTrailerKey, STATE.activeMovieData.title);
     }
 });
 
-// Handle Form Submission
-authForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    authNotification.classList.add('hidden');
-    
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value.trim();
-    const isLogin = authModeInput.value === 'login';
-    
-    if (!username || !password) {
-        showAuthNotification('Please fill in all fields.');
-        return;
+DOM.detailsSaveBtn.addEventListener('click', () => {
+    if (STATE.activeMovieData) {
+        saveToLibrary(STATE.activeMovieData);
+        DOM.detailsSaveBtn.textContent = 'Saved to Library';
+        DOM.detailsSaveBtn.disabled = true;
     }
+});
 
-    if (password.length < 6) {
-        showAuthNotification('Password must be at least 6 characters.');
-        return;
-    }
-    
-    // UI Loading state
-    submitBtnText.classList.add('hidden');
-    loginSpinner.classList.remove('hidden');
-    
+// ─── Rating Submission ─────────────────────────────────────────────────────────
+DOM.rateSubmitBtn.addEventListener('click', async () => {
+    if (!STATE.activeMovieData) return;
+    const score = parseFloat(DOM.rateSelect.value);
+    const title = STATE.activeMovieData.title;
+
+    DOM.rateSubmitBtn.disabled = true;
+    DOM.rateSubmitBtn.textContent = 'Submitting…';
+
     try {
-        // Use .call(API) to preserve `this` context
+        const res = await API.rateMovie(STATE.activeMovieId, score);
+        recordEvent('RATING_SUBMIT', `"${title}"`, `Metric: ${score}.0`);
+        showToast(`Rating submitted for "${title}".`, 'success');
+        closeDetailsOverlay();
+    } catch (_) {
+        showToast('Rating submission failed. Please try again.', 'error');
+    } finally {
+        DOM.rateSubmitBtn.disabled = false;
+        DOM.rateSubmitBtn.textContent = 'Submit';
+    }
+});
+
+// ─── Profile Panel ─────────────────────────────────────────────────────────────
+function openProfile() {
+    DOM.profileName.textContent = STATE.user;
+    DOM.profileAvLg.textContent = STATE.user ? STATE.user[0].toUpperCase() : 'U';
+    DOM.diagToken.textContent   = `sess_${btoa(STATE.user).substring(0, 10)}`;
+    DOM.diagEvents.textContent  = STATE.activityLog.length;
+    DOM.diagSaved.textContent   = STATE.watchlist.length;
+    DOM.diagSessionStart.textContent = STATE.sessionStart
+        ? new Date(STATE.sessionStart).toISOString()
+        : '—';
+
+    renderActivityLog();
+    renderLibrary();
+    showView(DOM.viewProfile);
+}
+
+DOM.navProfileBtn.addEventListener('click', openProfile);
+DOM.profileBackBtn.addEventListener('click', () => showView(DOM.viewDashboard));
+
+DOM.clearLogBtn.addEventListener('click', () => {
+    STATE.activityLog = [];
+    localStorage.setItem('vc_activity_log', '[]');
+    renderActivityLog();
+    showToast('Interaction log cleared.', 'info');
+});
+
+// ─── Navbar scroll state ───────────────────────────────────────────────────────
+DOM.viewDashboard.addEventListener('scroll', () => {
+    if (DOM.viewDashboard.scrollTop > 60) {
+        DOM.mainNav.classList.add('scrolled');
+    } else {
+        DOM.mainNav.classList.remove('scrolled');
+    }
+});
+
+// ─── Authentication Logic ──────────────────────────────────────────────────────
+DOM.authToggleBtn.addEventListener('click', () => {
+    clearAuthAlert();
+    const isLogin = DOM.authMode.value === 'login';
+    if (isLogin) {
+        DOM.authMode.value = 'register';
+        DOM.authTitle.textContent    = 'Create Account';
+        DOM.authSubtitle.textContent = 'Choose a username and passphrase to register.';
+        DOM.authBtnLabel.textContent = 'Register';
+        DOM.authToggleMsg.textContent = 'Have an account?';
+        DOM.authToggleBtn.textContent = 'Sign In';
+    } else {
+        DOM.authMode.value = 'login';
+        DOM.authTitle.textContent    = 'Access Portal';
+        DOM.authSubtitle.textContent = 'Enter your credentials to continue.';
+        DOM.authBtnLabel.textContent = 'Authenticate';
+        DOM.authToggleMsg.textContent = 'No account?';
+        DOM.authToggleBtn.textContent = 'Register';
+    }
+});
+
+DOM.authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAuthAlert();
+
+    const username = DOM.inpUsername.value.trim();
+    const password = DOM.inpPassword.value.trim();
+    const isLogin  = DOM.authMode.value === 'login';
+
+    if (!username) { showAuthAlert('Username is required.'); return; }
+    if (!password || password.length < 6) { showAuthAlert('Password must be at least 6 characters.'); return; }
+
+    DOM.authSubmit.disabled  = true;
+    DOM.authBtnLabel.classList.add('hidden');
+    DOM.authSpinner.classList.remove('hidden');
+
+    try {
         const result = isLogin
             ? await API.login(username, password)
             : await API.register(username, password);
-        
+
         if (result.success) {
-            // Save user session
+            const successMsg = isLogin ? `Welcome back, ${username}.` : `Account created. Welcome, ${username}.`;
+            showAuthAlert(successMsg, 'success');
+
+            STATE.user         = username;
+            STATE.sessionStart = new Date().toISOString();
             API.setCurrentUser(username);
-            navUsername.textContent = username;
 
-            // Show welcome message inside the auth card briefly, then reveal dashboard
-            const welcomeMsg = isLogin ? `Welcome back, ${username}!` : `Account created! Welcome, ${username}!`;
-            showAuthNotification(welcomeMsg, 'success');
+            recordEvent(isLogin ? 'AUTH_LOGIN' : 'AUTH_REGISTER', `user:${username}`, '—');
 
-            // Short delay so user sees the success message, then cinematic reveal
-            setTimeout(() => {
-                transitionToDashboard();
-            }, 800);
-            
+            setTimeout(() => revealDashboard(), 900);
         } else {
-            showAuthNotification(result.error || (isLogin ? 'Invalid credentials.' : 'Registration failed. Try a different username.'));
+            showAuthAlert(result.error || (isLogin ? 'Invalid credentials.' : 'Registration failed.'));
         }
-    } catch (err) {
-        showAuthNotification('Network error. Please ensure backend is running.');
+    } catch (_) {
+        showAuthAlert('Network error. Verify the backend is running on port 5002.');
     } finally {
-        submitBtnText.classList.remove('hidden');
-        loginSpinner.classList.add('hidden');
+        DOM.authSubmit.disabled = false;
+        DOM.authBtnLabel.classList.remove('hidden');
+        DOM.authSpinner.classList.add('hidden');
     }
 });
 
-// Handle Logout
-logoutBtn.addEventListener('click', async () => {
-    const result = await API.logout();
-    if (result.success) {
-        localStorage.removeItem('movie_user');
-        // Fade out dashboard and fade in auth
-        dashboardLayer.classList.remove('revealed');
-        setTimeout(() => {
-            dashboardLayer.classList.add('hidden');
-            authGate.classList.remove('fade-out');
-            usernameInput.value = '';
-            passwordInput.value = '';
-        }, 800);
+// ─── Dashboard Reveal ──────────────────────────────────────────────────────────
+function revealDashboard() {
+    DOM.navAvatar.textContent = STATE.user ? STATE.user[0].toUpperCase() : 'U';
+    resetHeroSkeleton();
+    renderSkeletonGrid();
+    showView(DOM.viewDashboard);
+    loadMovies('all');
+}
+
+// ─── Logout ────────────────────────────────────────────────────────────────────
+DOM.navLogoutBtn.addEventListener('click', async () => {
+    recordEvent('AUTH_LOGOUT', `user:${STATE.user}`, '—');
+    const res = await API.logout();
+    if (res.success || res.message) {
+        STATE.user = null;
+        STATE.heroMovieId = null;
+        STATE.heroTrailerKey = null;
+
+        DOM.authMode.value = 'login';
+        DOM.authTitle.textContent    = 'Access Portal';
+        DOM.authSubtitle.textContent = 'Enter your credentials to continue.';
+        DOM.authBtnLabel.textContent = 'Authenticate';
+        DOM.authToggleMsg.textContent = 'No account?';
+        DOM.authToggleBtn.textContent = 'Register';
+        DOM.inpUsername.value = '';
+        DOM.inpPassword.value = '';
+        clearAuthAlert();
+
+        showView(DOM.viewAuth);
     } else {
-        showSpatialAlert('Error logging out');
+        showToast('Sign-out request failed.', 'error');
     }
 });
 
-
-// ─── Dashboard Data Loading ───────────────────────────────────────────────
-async function loadDashboardData() {
-    try {
-        // Fetch trending movies for hero and grid
-        const trendingResponse = await API.fetchTMDB('/trending/movie/week');
-        const movies = trendingResponse.results;
-        
-        if (movies && movies.length > 0) {
-            // Set Hero
-            const hero = movies[0];
-            heroTitle.classList.remove('skeleton-text');
-            heroDesc.classList.remove('skeleton-text-multiline');
-            heroTitle.textContent = hero.title || hero.original_title;
-            heroDesc.textContent = hero.overview || "Discover the next generation of cinematic experiences.";
-            heroShowcase.style.backgroundImage = `url(https://image.tmdb.org/t/p/original${hero.backdrop_path})`;
-            
-            // Populate Grid
-            movieGrid.innerHTML = '';
-            movies.slice(1, 13).forEach(movie => {
-                if (!movie.poster_path) return;
-                
-                const card = document.createElement('div');
-                card.className = 'movie-card';
-                card.innerHTML = `
-                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" class="movie-poster">
-                `;
-                
-                card.addEventListener('click', () => openMovieModal(movie.id));
-                movieGrid.appendChild(card);
-            });
-        }
-    } catch (err) {
-        console.error('Failed to load dashboard data', err);
-        showSpatialAlert('Could not load movie data.');
+// ─── Initialisation ────────────────────────────────────────────────────────────
+(function init() {
+    const savedUser = localStorage.getItem('movie_user');
+    if (savedUser) {
+        STATE.user         = savedUser;
+        STATE.sessionStart = localStorage.getItem('vc_session_start') || new Date().toISOString();
+        API.setCurrentUser(savedUser);
+        revealDashboard();
+    } else {
+        showView(DOM.viewAuth);
     }
-}
-
-// ─── Movie Modal Logic ────────────────────────────────────────────────────
-const modal = document.getElementById('movie-modal');
-const closeModal = document.getElementById('close-modal');
-
-async function openMovieModal(id) {
-    modal.classList.remove('hidden');
-    
-    try {
-        const movie = await API.fetchTMDB(`/movie/${id}`);
-        document.getElementById('modal-title').textContent = movie.title;
-        document.getElementById('modal-year').textContent = movie.release_date ? movie.release_date.substring(0, 4) : 'N/A';
-        document.getElementById('modal-genre').textContent = movie.genres && movie.genres.length > 0 ? movie.genres[0].name : 'Movie';
-        document.getElementById('modal-desc').textContent = movie.overview;
-        document.getElementById('modal-rating').textContent = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
-        document.getElementById('modal-img').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
-        
-        // Setup rate action
-        document.getElementById('submit-rating-btn').onclick = async () => {
-            const score = document.getElementById('user-rating-input').value;
-            const res = await API.rateMovie(movie.id, score);
-            if(res.success) {
-                showSpatialAlert(`Rated ${movie.title} ${score} stars!`);
-                modal.classList.add('hidden');
-            } else {
-                showSpatialAlert(res.error || 'Failed to submit rating.');
-            }
-        };
-        
-    } catch (err) {
-        showSpatialAlert('Failed to load movie details.');
-    }
-}
-
-closeModal.addEventListener('click', () => {
-    modal.classList.add('hidden');
-});
-
-// ─── Search Functionality ─────────────────────────────────────────────────
-const searchInput = document.getElementById('search-input');
-let searchDebounce = null;
-searchInput.addEventListener('input', (e) => {
-    clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(async () => {
-        const query = e.target.value.trim();
-        if (query.length < 2) {
-            loadDashboardData(); // revert to trending
-            return;
-        }
-        
-        try {
-            const searchRes = await API.fetchTMDB(`/search/movie?query=${encodeURIComponent(query)}`);
-            movieGrid.innerHTML = '';
-            document.querySelector('.section-heading').textContent = `Search Results for "${query}"`;
-            
-            searchRes.results.slice(0, 12).forEach(movie => {
-                if (!movie.poster_path) return;
-                const card = document.createElement('div');
-                card.className = 'movie-card';
-                card.innerHTML = `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" class="movie-poster">`;
-                card.addEventListener('click', () => openMovieModal(movie.id));
-                movieGrid.appendChild(card);
-            });
-        } catch(err) {
-            console.error('Search failed', err);
-        }
-    }, 500);
-});
-
-// ─── Initialize SPA ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuthAndRoute();
-});
+    localStorage.setItem('vc_session_start', STATE.sessionStart || new Date().toISOString());
+})();

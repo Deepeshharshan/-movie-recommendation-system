@@ -3,146 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VISIONCINE | Cinematic Experience</title>
-    <!-- CSS is loaded natively. For Flask integration, replace with url_for -->
+    <meta name="description" content="VISIONCINE — Precision-curated cinematic discovery platform.">
+    <title>VISIONCINE</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='spatial/styles.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- ==========================================
-         LAYER 1: AUTH GATE (LANDING / LOGIN)
-         ========================================== -->
-    <div id="auth-gate" class="auth-gate-layer">
-        <!-- Ambient Background Glow -->
-        <div class="auth-ambient-glow"></div>
-        
-        <!-- Auth Container -->
-        <div class="auth-container">
-            <h1 class="brand-title">VISION<span class="brand-accent">CINE</span></h1>
-            <p class="brand-subtitle">The next generation of cinematic discovery.</p>
-            
-            <!-- Machined Glass Login Card -->
-            <div class="auth-glass-card">
-                <h2 class="auth-header">Access Portal</h2>
-                
-                <!-- Micro-Notification Container -->
-                <div id="auth-notification" class="auth-notification hidden"></div>
-                
-                <form id="auth-form" class="auth-form" autocomplete="off">
-                    <div class="input-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" class="spatial-input" placeholder="Enter your username" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" class="spatial-input" placeholder="Enter your password" required>
-                    </div>
-                    
-                    <!-- Hidden field to toggle Login vs Register mode -->
-                    <input type="hidden" id="auth-mode" value="login">
+<!-- ============================================================
+     SYSTEM: TOAST NOTIFICATION LAYER
+     ============================================================ -->
+<div id="toast-layer" class="toast-layer" aria-live="polite"></div>
 
-                    <button type="submit" class="pill-btn primary-btn" id="login-submit-btn">
-                        <span class="btn-text">Sign In</span>
-                        <div class="spinner hidden" id="login-spinner"></div>
+<!-- ============================================================
+     VIEW 1: AUTHENTICATION GATE
+     ============================================================ -->
+<div id="view-auth" class="view view-auth active">
+    <div class="auth-ambient"></div>
+    <div class="auth-grid-overlay"></div>
+
+    <div class="auth-center">
+        <div class="auth-brand">
+            <span class="auth-brand-mark">VC</span>
+            <div class="auth-brand-text">
+                <span class="auth-brand-name">VISIONCINE</span>
+                <span class="auth-brand-sub">Enterprise Cinematic Platform</span>
+            </div>
+        </div>
+
+        <div class="auth-card">
+            <div class="auth-card-header">
+                <h1 id="auth-title" class="auth-card-title">Access Portal</h1>
+                <p id="auth-subtitle" class="auth-card-sub">Enter your credentials to continue.</p>
+            </div>
+
+            <div id="auth-alert" class="auth-alert hidden"></div>
+
+            <form id="auth-form" autocomplete="off" novalidate>
+                <input type="hidden" id="auth-mode" value="login">
+
+                <div class="field-group">
+                    <label class="field-label" for="inp-username">Username</label>
+                    <input type="text" id="inp-username" class="field-input" placeholder="identifier" autocomplete="off" spellcheck="false">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label" for="inp-password">Password</label>
+                    <input type="password" id="inp-password" class="field-input" placeholder="passphrase">
+                </div>
+
+                <button type="submit" id="auth-submit" class="btn-primary btn-full">
+                    <span id="auth-btn-label">Authenticate</span>
+                    <div id="auth-spinner" class="btn-spinner hidden"></div>
+                </button>
+            </form>
+
+            <div class="auth-toggle-row">
+                <span id="auth-toggle-msg" class="auth-toggle-msg">No account?</span>
+                <button id="auth-toggle-btn" class="auth-toggle-btn">Register</button>
+            </div>
+        </div>
+
+        <p class="auth-legal">By continuing, you agree to VISIONCINE Platform Terms of Service.</p>
+    </div>
+</div>
+
+<!-- ============================================================
+     VIEW 2: MAIN DASHBOARD
+     ============================================================ -->
+<div id="view-dashboard" class="view view-dashboard hidden">
+
+    <!-- NAVBAR -->
+    <nav id="main-nav" class="navbar">
+        <div class="nav-brand">VISION<span class="brand-dim">CINE</span></div>
+
+        <div class="nav-search">
+            <div class="search-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="search-input" class="search-input" placeholder="Search titles...">
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <button id="nav-profile-btn" class="nav-icon-btn" aria-label="Profile">
+                <div id="nav-avatar" class="nav-avatar">U</div>
+            </button>
+            <button id="nav-logout-btn" class="btn-ghost">Sign Out</button>
+        </div>
+    </nav>
+
+    <!-- HERO CANVAS -->
+    <section id="hero-section" class="hero">
+        <div id="hero-bg" class="hero-bg"></div>
+        <div class="hero-scrim"></div>
+        <div class="hero-content">
+            <div id="hero-badge" class="hero-badge skeleton-inline" style="width:90px;height:22px"></div>
+            <h2 id="hero-title" class="hero-title skeleton-block" style="width:60%;height:56px;margin-bottom:1rem"></h2>
+            <p id="hero-desc" class="hero-desc skeleton-block" style="width:45%;height:64px;margin-bottom:2rem"></p>
+            <div class="hero-actions">
+                <button id="hero-trailer-btn" class="btn-primary btn-hero skeleton-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Watch Trailer
+                </button>
+                <button id="hero-info-btn" class="btn-ghost btn-hero skeleton-btn">Details</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FILTER RAIL -->
+    <div class="filter-rail-wrap">
+        <div class="filter-rail" id="filter-rail">
+            <button class="filter-tag active" data-filter="all">All Titles</button>
+            <button class="filter-tag" data-filter="trending">Trending Index</button>
+            <button class="filter-tag" data-filter="top_rated">High Rated Core</button>
+            <button class="filter-tag" data-filter="release">Chronological Release</button>
+            <button class="filter-tag" data-filter="watchlist">Saved Library</button>
+        </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <main class="content-area">
+        <div class="section-header">
+            <h3 id="section-label" class="section-label">Recommended Titles</h3>
+            <span id="section-count" class="section-count"></span>
+        </div>
+        <div id="movie-grid" class="movie-grid">
+            <!-- Skeleton cards injected by JS -->
+        </div>
+    </main>
+
+</div>
+
+<!-- ============================================================
+     VIEW 3: PROFILE PANEL
+     ============================================================ -->
+<div id="view-profile" class="view view-profile hidden">
+
+    <div class="profile-nav">
+        <button id="profile-back-btn" class="btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            Back to Dashboard
+        </button>
+        <span class="profile-nav-brand">VISION<span class="brand-dim">CINE</span></span>
+    </div>
+
+    <div class="profile-layout">
+
+        <!-- LEFT: DIAGNOSTICS PANEL -->
+        <aside class="profile-aside">
+            <div class="profile-id-card">
+                <div id="profile-avatar-lg" class="profile-avatar-lg">U</div>
+                <div>
+                    <p id="profile-display-name" class="profile-display-name">—</p>
+                    <p class="profile-tier-label">STANDARD TIER</p>
+                </div>
+            </div>
+
+            <div class="diagnostics-panel">
+                <p class="diag-heading">Account Diagnostics</p>
+                <div class="diag-grid">
+                    <div class="diag-row">
+                        <span class="diag-key">Security Status</span>
+                        <span class="diag-val status-secure">Secured</span>
+                    </div>
+                    <div class="diag-row">
+                        <span class="diag-key">Account Tier</span>
+                        <span class="diag-val" id="diag-tier">Standard</span>
+                    </div>
+                    <div class="diag-row">
+                        <span class="diag-key">Session Token</span>
+                        <span class="diag-val mono" id="diag-token">—</span>
+                    </div>
+                    <div class="diag-row">
+                        <span class="diag-key">Interaction Events</span>
+                        <span class="diag-val mono" id="diag-events">0</span>
+                    </div>
+                    <div class="diag-row">
+                        <span class="diag-key">Saved Titles</span>
+                        <span class="diag-val mono" id="diag-saved">0</span>
+                    </div>
+                    <div class="diag-row">
+                        <span class="diag-key">Session Start</span>
+                        <span class="diag-val mono" id="diag-session-start">—</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT: ACTIVITY + LIBRARY -->
+        <div class="profile-main">
+
+            <!-- ACTIVITY LOG -->
+            <section class="profile-section">
+                <div class="profile-section-header">
+                    <h3 class="profile-section-title">Interaction Log</h3>
+                    <button id="clear-log-btn" class="btn-ghost-sm">Clear</button>
+                </div>
+                <div class="log-table-wrap">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th>Event ID</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Metric</th>
+                                <th>Timestamp (ISO)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-log-body">
+                            <tr class="log-empty-row">
+                                <td colspan="5">No interaction events recorded in this session.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SAVED LIBRARY -->
+            <section class="profile-section">
+                <div class="profile-section-header">
+                    <h3 class="profile-section-title">Saved Library</h3>
+                    <span id="library-count" class="section-count">0 titles</span>
+                </div>
+                <div id="library-grid" class="library-grid">
+                    <p class="library-empty">No titles saved to your library.</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY: VIDEO / TRAILER VIEWPORT
+     ============================================================ -->
+<div id="trailer-overlay" class="overlay hidden">
+    <div class="overlay-backdrop" id="trailer-backdrop"></div>
+    <div class="trailer-viewport">
+        <div class="trailer-header">
+            <span id="trailer-title-label" class="trailer-label">Official Trailer</span>
+            <button id="trailer-close-btn" class="overlay-close-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="trailer-frame-wrap">
+            <iframe id="trailer-iframe" class="trailer-frame" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+            <div id="trailer-placeholder" class="trailer-placeholder">
+                <div class="trailer-placeholder-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                <p class="trailer-placeholder-msg">Trailer data unavailable for this title.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY: MOVIE DETAILS
+     ============================================================ -->
+<div id="details-overlay" class="overlay hidden">
+    <div class="overlay-backdrop" id="details-backdrop"></div>
+    <div class="details-panel">
+        <button id="details-close-btn" class="overlay-close-btn overlay-close-abs">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+
+        <div class="details-body">
+            <img id="details-poster" class="details-poster" src="" alt="">
+            <div class="details-info">
+                <h2 id="details-title" class="details-title"></h2>
+                <div class="details-meta-row">
+                    <span id="details-year" class="meta-chip"></span>
+                    <span id="details-runtime" class="meta-chip"></span>
+                    <span id="details-rating" class="meta-chip rating-chip"></span>
+                </div>
+                <div id="details-genres" class="details-genres"></div>
+                <p id="details-overview" class="details-overview"></p>
+
+                <div class="details-actions">
+                    <button id="details-trailer-btn" class="btn-primary">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Trailer
                     </button>
-                    
-                    <div class="auth-toggle">
-                        <span class="toggle-text" id="toggle-msg">Need access?</span>
-                        <a href="#" id="toggle-auth-mode" class="toggle-link">Create Account</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+                    <button id="details-save-btn" class="btn-ghost">Save to Library</button>
+                </div>
 
-
-    <!-- ==========================================
-         LAYER 2: MAIN DASHBOARD (HIDDEN ON LOAD)
-         ========================================== -->
-    <div id="dashboard-layer" class="dashboard-layer hidden">
-        
-        <!-- Feedback Alert System (Toasts) -->
-        <div id="feedback-layer" class="feedback-layer hidden">
-            <div class="glass-alert" id="feedback-message"></div>
-        </div>
-
-        <!-- Navbar -->
-        <nav class="glass-nav">
-            <div class="nav-brand">VISION<span class="brand-accent">CINE</span></div>
-            <div class="search-container">
-                <input type="text" id="search-input" class="spatial-input search-input" placeholder="Search for movies...">
-            </div>
-            <div class="user-profile">
-                <span id="nav-username" class="nav-username"></span>
-                <button id="logout-btn" class="pill-btn secondary-btn small-btn">Sign Out</button>
-            </div>
-        </nav>
-
-        <!-- Massive Hero Showcase -->
-        <header class="hero-canvas" id="hero-showcase">
-            <div class="hero-content">
-                <h1 class="hero-title skeleton-text" id="hero-title">Featured Movie</h1>
-                <p class="hero-desc skeleton-text-multiline" id="hero-desc">Discover the next generation of cinematic experiences.</p>
-                <button class="pill-btn primary-btn" id="hero-action">Watch Trailer</button>
-            </div>
-            <div class="hero-shadow-shield"></div>
-        </header>
-
-        <!-- Movie Grid Array -->
-        <main class="content-section">
-            <h2 class="section-heading">Recommended for You</h2>
-            
-            <div class="movie-grid" id="movie-grid">
-                <!-- Skeletons placeholders -->
-                <div class="movie-card skeleton-card"></div>
-                <div class="movie-card skeleton-card"></div>
-                <div class="movie-card skeleton-card"></div>
-                <div class="movie-card skeleton-card"></div>
-                <div class="movie-card skeleton-card"></div>
-                <div class="movie-card skeleton-card"></div>
-            </div>
-        </main>
-
-    </div>
-
-    <!-- ==========================================
-         LAYER 3: MOVIE DETAILS MODAL
-         ========================================== -->
-    <div id="movie-modal" class="modal hidden">
-        <div class="modal-content machined-glass">
-            <span id="close-modal" class="close-btn">&times;</span>
-            <div class="modal-body centered-modal">
-                <img id="modal-img" src="" alt="Movie Poster" class="modal-poster">
-                <div class="modal-info">
-                    <h2 id="modal-title">Movie Title</h2>
-                    <div class="modal-meta">
-                        <span id="modal-year">2024</span> &bull; 
-                        <span id="modal-genre" class="genre-tag">Sci-Fi</span> &bull;
-                        <span id="modal-reviews" class="reviews-tag">1,200 Reviews</span>
-                    </div>
-                    <p id="modal-desc">Movie description goes here.</p>
-                    
-                    <div class="rating-box spatial-input-box">
-                        <div class="current-rating">Rating: <span id="modal-rating">5.0</span>/5 ⭐️</div>
-                        <div class="rate-action">
-                            <select id="user-rating-input" class="spatial-input rating-select">
-                                <option value="5">5 Stars</option>
-                                <option value="4">4 Stars</option>
-                                <option value="3">3 Stars</option>
-                                <option value="2">2 Stars</option>
-                                <option value="1">1 Star</option>
-                            </select>
-                            <button id="submit-rating-btn" class="pill-btn primary-btn small-btn">Submit Rating</button>
-                        </div>
+                <div class="rate-block">
+                    <p class="rate-block-label">Submit Rating</p>
+                    <div class="rate-row">
+                        <select id="rate-select" class="field-input rate-select">
+                            <option value="5">5.0 — Exceptional</option>
+                            <option value="4">4.0 — Above Average</option>
+                            <option value="3">3.0 — Adequate</option>
+                            <option value="2">2.0 — Below Average</option>
+                            <option value="1">1.0 — Poor</option>
+                        </select>
+                        <button id="rate-submit-btn" class="btn-primary">Submit</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Scripts are loaded natively. For Flask integration, replace with url_for -->
-    <script src="{{ url_for('static', filename='spatial/api.js') }}"></script>
-    <script src="{{ url_for('static', filename='spatial/app.js') }}"></script>
+<script src="{{ url_for('static', filename='spatial/api.js') }}"></script>
+<script src="{{ url_for('static', filename='spatial/app.js') }}"></script>
 </body>
 </html>
