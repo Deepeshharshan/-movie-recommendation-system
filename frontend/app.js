@@ -314,6 +314,7 @@ function renderMovieGrid(movies) {
 }
 
 function renderForYouGrid(movies) {
+    if (!DOM.foryouSection || !DOM.foryouGrid) return;
     if (!movies || movies.length === 0) {
         DOM.foryouSection.style.display = 'none';
         return;
@@ -405,29 +406,29 @@ async function loadMovies(filter = 'all') {
                             const recData = await API.fetchTMDB(`/movie/${match[1]}/recommendations`);
                             renderForYouGrid(recData.results || []);
                         } catch(e) {
-                            DOM.foryouSection.style.display = 'none';
+                            if (DOM.foryouSection) DOM.foryouSection.style.display = 'none';
                         }
                     } else if (STATE.watchlist.length > 0) {
                         // Fallback to latest watchlist item
                         const lastSaved = STATE.watchlist[STATE.watchlist.length - 1];
-                        DOM.foryouLabel.textContent = `"${lastSaved.title}"`;
+                        if (DOM.foryouLabel) DOM.foryouLabel.textContent = `"${lastSaved.title}"`;
                         try {
                             const recData = await API.fetchTMDB(`/movie/${lastSaved.id}/recommendations`);
                             renderForYouGrid(recData.results || []);
                         } catch(e) {
-                            DOM.foryouSection.style.display = 'none';
+                            if (DOM.foryouSection) DOM.foryouSection.style.display = 'none';
                         }
                     } else {
-                        DOM.foryouSection.style.display = 'none';
+                        if (DOM.foryouSection) DOM.foryouSection.style.display = 'none';
                     }
                 } else {
-                    DOM.foryouSection.style.display = 'none';
+                    if (DOM.foryouSection) DOM.foryouSection.style.display = 'none';
                 }
             } else {
-                DOM.foryouSection.style.display = 'none';
+                if (DOM.foryouSection) DOM.foryouSection.style.display = 'none';
             }
         } else {
-            DOM.foryouSection.style.display = 'none';
+            if (DOM.foryouSection) DOM.foryouSection.style.display = 'none';
         }
     } catch (err) {
         console.error('loadMovies error:', err);
