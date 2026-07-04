@@ -1,231 +1,280 @@
-/**
- * Movie Recommendation System - Vision Pro Interface
- * Backend-Connected: TMDB for movie data, Flask for user actions.
- * UI design is fully preserved — only logic is updated.
- */
+// ==========================================================================
+// VISIONCINE SPA ROUTING & LOGIC
+// ==========================================================================
 
-// --- TMDB API Configuration ---
-const TMDB_API_KEY = '1ce706eba9d04d9aabca93cb7cc91efd';
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-const TMDB_HERO_IMAGE_BASE = 'https://image.tmdb.org/t/p/original';
+// ─── Elements ─────────────────────────────────────────────────────────────
+const authGate = document.getElementById('auth-gate');
+const dashboardLayer = document.getElementById('dashboard-layer');
 
-// TMDB Genre ID to name map (fetched once on init)
-const GENRE_MAP = {};
+// Auth Gate Elements
+const authForm = document.getElementById('auth-form');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const authModeInput = document.getElementById('auth-mode');
+const toggleAuthModeBtn = document.getElementById('toggle-auth-mode');
+const toggleMsg = document.getElementById('toggle-msg');
+const authHeader = document.querySelector('.auth-header');
+const submitBtnText = document.querySelector('.btn-text');
+const authNotification = document.getElementById('auth-notification');
+const loginSpinner = document.getElementById('login-spinner');
 
-// DOM Elements
-const feedbackLayer = document.getElementById('feedback-layer');
-const feedbackMessage = document.getElementById('feedback-message');
-const movieGrid = document.getElementById('movie-grid');
-const searchInput = document.getElementById('search-input');
-const heroShowcase = document.getElementById('hero-showcase');
+// Dashboard Elements
+const navUsername = document.getElementById('nav-username');
+const logoutBtn = document.getElementById('logout-btn');
 const heroTitle = document.getElementById('hero-title');
 const heroDesc = document.getElementById('hero-desc');
-const heroAction = document.getElementById('hero-action');
+const heroShowcase = document.getElementById('hero-showcase');
+const movieGrid = document.getElementById('movie-grid');
 
-// Modal Elements
-const movieModal = document.getElementById('movie-modal');
-const closeModalBtn = document.getElementById('close-modal');
-const modalImg = document.getElementById('modal-img');
-const modalTitle = document.getElementById('modal-title');
-const modalYear = document.getElementById('modal-year');
-const modalGenre = document.getElementById('modal-genre');
-const modalReviews = document.getElementById('modal-reviews');
-const modalDesc = document.getElementById('modal-desc');
-const modalRating = document.getElementById('modal-rating');
-const userRatingInput = document.getElementById('user-rating-input');
-const submitRatingBtn = document.getElementById('submit-rating-btn');
+// Feedback Alert
+const feedbackLayer = document.getElementById('feedback-layer');
+const feedbackMessage = document.getElementById('feedback-message');
 
-let activeMovieModal = null;
-let ALL_MOVIES = [];
+// ─── State Management ─────────────────────────────────────────────────────
+function checkAuthAndRoute() {
+    // Check localStorage (simulating token/user persistence)
+    const user = localStorage.getItem('movie_user');
+    
+    if (user) {
+        // Logged in: Reveal Dashboard
+        navUsername.textContent = user;
+        transitionToDashboard();
+    } else {
+        // Not logged in: Show Auth Gate
+        authGate.classList.remove('fade-out');
+        dashboardLayer.classList.add('hidden');
+        dashboardLayer.classList.remove('revealed');
+    }
+}
 
-// ─── Spatial Alert (preserved exactly as designed) ─────────────────────────
-function showSpatialAlert(message, type = 'info', duration = 3000) {
-    feedbackMessage.innerHTML = `<span class="alert-icon">${type === 'error' ? '⚠️' : '✨'}</span> ${message}`;
+function transitionToDashboard() {
+    // Hardware accelerated cinematic fade out
+    authGate.classList.add('fade-out');
+    
+    // Wait for fade out to complete before showing dashboard
+    setTimeout(() => {
+        dashboardLayer.classList.remove('hidden');
+        // Trigger CSS reflow to ensure transition works
+        void dashboardLayer.offsetWidth; 
+        dashboardLayer.classList.add('revealed');
+        
+        // Fetch data for dashboard
+        loadDashboardData();
+    }, 800); // matches the 0.8s CSS transition
+}
+
+function showAuthNotification(msg, type = 'error') {
+    authNotification.textContent = msg;
+    authNotification.classList.remove('hidden');
+    if (type === 'error') {
+        authNotification.style.background = 'rgba(255, 59, 48, 0.2)';
+        authNotification.style.borderColor = 'rgba(255, 59, 48, 0.4)';
+        authNotification.style.color = '#ffb3b0';
+    } else {
+        authNotification.style.background = 'rgba(48, 209, 88, 0.2)';
+        authNotification.style.borderColor = 'rgba(48, 209, 88, 0.4)';
+        authNotification.style.color = '#a6f7b9';
+    }
+}
+
+function showSpatialAlert(msg) {
+    feedbackMessage.textContent = msg;
     feedbackLayer.classList.remove('hidden');
-    feedbackLayer.classList.add('visible');
-    setTimeout(() => feedbackLayer.classList.remove('visible'), duration);
+    setTimeout(() => {
+        feedbackLayer.classList.add('hidden');
+    }, 3000);
 }
 
-// ─── Skeleton Loader (preserved exactly as designed) ───────────────────────
-function renderSkeletons() {
-    movieGrid.innerHTML = Array(8).fill('<div class="movie-card skeleton-card"></div>').join('');
-}
+// ─── Auth Logic ───────────────────────────────────────────────────────────
 
-// ─── TMDB: Fetch genre list once and cache ──────────────────────────────────
-async function loadGenres() {
-    if (Object.keys(GENRE_MAP).length > 0) return; // Already loaded
-    try {
-        const res = await fetch(`${TMDB_BASE_URL}/genre/movie/list?api_key=${TMDB_API_KEY}&language=en-US`);
-        const data = await res.json();
-        if (data.genres) {
-            data.genres.forEach(g => { GENRE_MAP[g.id] = g.name; });
-        }
-    } catch (e) {
-        console.warn('Could not load TMDB genres:', e);
+// Toggle Login / Register
+toggleAuthModeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    authNotification.classList.add('hidden');
+    
+    if (authModeInput.value === 'login') {
+        authModeInput.value = 'register';
+        authHeader.textContent = 'Create Account';
+        submitBtnText.textContent = 'Sign Up';
+        toggleMsg.textContent = 'Already have an account?';
+        toggleAuthModeBtn.textContent = 'Log In';
+    } else {
+        authModeInput.value = 'login';
+        authHeader.textContent = 'Access Portal';
+        submitBtnText.textContent = 'Sign In';
+        toggleMsg.textContent = 'Need access?';
+        toggleAuthModeBtn.textContent = 'Create Account';
     }
-}
-
-// ─── Map TMDB movie object to our UI schema ─────────────────────────────────
-function mapTMDBMovie(movie) {
-    const genres = movie.genre_ids
-        ? movie.genre_ids.map(id => GENRE_MAP[id]).filter(Boolean).join(', ') || 'Cinema'
-        : (movie.genres ? movie.genres.map(g => g.name).join(', ') : 'Cinema');
-
-    return {
-        id: movie.id,
-        title: movie.title,
-        year: movie.release_date ? movie.release_date.substring(0, 4) : 'N/A',
-        genre: genres,
-        rating: movie.vote_average ? (movie.vote_average / 2).toFixed(1) : 'N/A', // Convert 10-pt to 5-pt scale
-        reviews: movie.vote_count || 0,
-        image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster',
-        heroImage: movie.backdrop_path ? `${TMDB_HERO_IMAGE_BASE}${movie.backdrop_path}` : null,
-        desc: movie.overview || 'No description available.'
-    };
-}
-
-// ─── TMDB: Fetch Popular or Search ─────────────────────────────────────────
-async function fetchMovies(query = '') {
-    renderSkeletons();
-
-    await loadGenres(); // Ensure genre map is ready
-
-    const url = query
-        ? `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`
-        : `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.results && data.results.length > 0) {
-            ALL_MOVIES = data.results.map(mapTMDBMovie);
-            renderMovies(ALL_MOVIES);
-
-            if (!query) {
-                updateHero(ALL_MOVIES[Math.floor(Math.random() * Math.min(ALL_MOVIES.length, 5))]);
-            }
-        } else {
-            movieGrid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">No movies found for "${query}".</p>`;
-        }
-    } catch (error) {
-        console.error('Error fetching TMDB data:', error);
-        movieGrid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">Could not load movies. Please try again.</p>`;
-    }
-}
-
-// ─── Render movie cards (design preserved exactly) ─────────────────────────
-function renderMovies(movies) {
-    movieGrid.innerHTML = '';
-
-    if (movies.length === 0) {
-        movieGrid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">No cinematic matches found.</p>`;
-        return;
-    }
-
-    movies.forEach(movie => {
-        const card = document.createElement('div');
-        card.className = 'movie-card';
-        card.innerHTML = `
-            <img src="${movie.image}" alt="${movie.title}" loading="lazy">
-            <div class="card-overlay">
-                <div class="card-title">${movie.title}</div>
-                <div class="card-meta">⭐️ ${movie.rating} • ${movie.genre.split(',')[0]}</div>
-            </div>
-        `;
-        card.addEventListener('click', () => openMovieModal(movie));
-        movieGrid.appendChild(card);
-    });
-}
-
-// ─── Hero Section (design preserved exactly) ───────────────────────────────
-function updateHero(movie) {
-    heroTitle.classList.remove('skeleton-text');
-    heroDesc.classList.remove('skeleton-text-multiline');
-    heroTitle.textContent = movie.title;
-    heroDesc.textContent = movie.desc;
-    heroShowcase.style.backgroundImage = `url('${movie.heroImage || movie.image}')`;
-    heroAction.onclick = () => openMovieModal(movie);
-}
-
-// ─── Modal: Open (design preserved exactly) ────────────────────────────────
-function openMovieModal(movie) {
-    activeMovieModal = movie;
-    modalImg.src = movie.image;
-    modalTitle.textContent = movie.title;
-    modalYear.textContent = movie.year;
-    modalGenre.textContent = movie.genre;
-    modalReviews.textContent = `${movie.reviews.toLocaleString()} Reviews`;
-    modalDesc.textContent = movie.desc;
-    modalRating.textContent = movie.rating;
-    movieModal.classList.remove('hidden');
-}
-
-// ─── Modal: Close (design preserved exactly) ───────────────────────────────
-function closeMovieModal() {
-    movieModal.classList.add('hidden');
-    activeMovieModal = null;
-}
-
-closeModalBtn.addEventListener('click', closeMovieModal);
-movieModal.addEventListener('click', (e) => {
-    if (e.target === movieModal) closeMovieModal();
 });
 
-// ─── Rating Submission → Flask Backend ────────────────────────────────────
-submitRatingBtn.addEventListener('click', async () => {
-    if (!activeMovieModal) return;
-
-    const val = parseInt(userRatingInput.value);
-    const movie = activeMovieModal;
-
-    submitRatingBtn.textContent = 'Submitting...';
-    submitRatingBtn.disabled = true;
-
+// Handle Form Submission
+authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authNotification.classList.add('hidden');
+    
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+    const isLogin = authModeInput.value === 'login';
+    
+    if (!username || !password) return;
+    
+    // UI Loading state
+    submitBtnText.classList.add('hidden');
+    loginSpinner.classList.remove('hidden');
+    
     try {
-        // Try to submit to Flask backend if authenticated
-        if (API.isAuthenticated()) {
-            await API.submitRating(movie.id, val);
+        const action = isLogin ? API.login : API.register;
+        const result = await action(username, password);
+        
+        if (result.success) {
+            // SUCCESS! 
+            localStorage.setItem('movie_user', username);
+            API.setCurrentUser(username);
+            
+            if (!isLogin) {
+                // If it was register, switch to login silently or just login directly
+                // (Flask backend logs them in on register automatically)
+            }
+            
+            // Execute the Cinematic Reveal
+            transitionToDashboard();
+            
+        } else {
+            showAuthNotification(result.error || 'Authentication failed.');
         }
     } catch (err) {
-        console.warn('Backend rating failed, applying locally:', err.message);
-        // Silently fall through — still update the UI locally
+        showAuthNotification('Network error. Please ensure backend is running.');
     } finally {
-        // Always update UI immediately regardless of backend result
-        const currentRating = parseFloat(movie.rating);
-        const newRating = ((currentRating * movie.reviews + val) / (movie.reviews + 1)).toFixed(1);
-        movie.rating = newRating;
-        movie.reviews += 1;
-
-        modalRating.textContent = newRating;
-        submitRatingBtn.textContent = 'Submit Rating';
-        submitRatingBtn.disabled = false;
-
-        showSpatialAlert(`You rated "${movie.title}" ${val} star${val !== 1 ? 's' : ''}!`);
-
-        // Refresh the grid to reflect updated rating
-        fetchMovies(searchInput.value.trim());
+        submitBtnText.classList.remove('hidden');
+        loginSpinner.classList.add('hidden');
     }
 });
 
-// ─── Search (live, connected to TMDB) ──────────────────────────────────────
+// Handle Logout
+logoutBtn.addEventListener('click', async () => {
+    const result = await API.logout();
+    if (result.success) {
+        localStorage.removeItem('movie_user');
+        // Fade out dashboard and fade in auth
+        dashboardLayer.classList.remove('revealed');
+        setTimeout(() => {
+            dashboardLayer.classList.add('hidden');
+            authGate.classList.remove('fade-out');
+            usernameInput.value = '';
+            passwordInput.value = '';
+        }, 800);
+    } else {
+        showSpatialAlert('Error logging out');
+    }
+});
+
+
+// ─── Dashboard Data Loading ───────────────────────────────────────────────
+async function loadDashboardData() {
+    try {
+        // Fetch trending movies for hero and grid
+        const trendingResponse = await API.fetchTMDB('/trending/movie/week');
+        const movies = trendingResponse.results;
+        
+        if (movies && movies.length > 0) {
+            // Set Hero
+            const hero = movies[0];
+            heroTitle.classList.remove('skeleton-text');
+            heroDesc.classList.remove('skeleton-text-multiline');
+            heroTitle.textContent = hero.title || hero.original_title;
+            heroDesc.textContent = hero.overview || "Discover the next generation of cinematic experiences.";
+            heroShowcase.style.backgroundImage = `url(https://image.tmdb.org/t/p/original${hero.backdrop_path})`;
+            
+            // Populate Grid
+            movieGrid.innerHTML = '';
+            movies.slice(1, 13).forEach(movie => {
+                if (!movie.poster_path) return;
+                
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.innerHTML = `
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" class="movie-poster">
+                `;
+                
+                card.addEventListener('click', () => openMovieModal(movie.id));
+                movieGrid.appendChild(card);
+            });
+        }
+    } catch (err) {
+        console.error('Failed to load dashboard data', err);
+        showSpatialAlert('Could not load movie data.');
+    }
+}
+
+// ─── Movie Modal Logic ────────────────────────────────────────────────────
+const modal = document.getElementById('movie-modal');
+const closeModal = document.getElementById('close-modal');
+
+async function openMovieModal(id) {
+    modal.classList.remove('hidden');
+    
+    try {
+        const movie = await API.fetchTMDB(`/movie/${id}`);
+        document.getElementById('modal-title').textContent = movie.title;
+        document.getElementById('modal-year').textContent = movie.release_date ? movie.release_date.substring(0, 4) : 'N/A';
+        document.getElementById('modal-genre').textContent = movie.genres && movie.genres.length > 0 ? movie.genres[0].name : 'Movie';
+        document.getElementById('modal-desc').textContent = movie.overview;
+        document.getElementById('modal-rating').textContent = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
+        document.getElementById('modal-img').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+        
+        // Setup rate action
+        document.getElementById('submit-rating-btn').onclick = async () => {
+            const score = document.getElementById('user-rating-input').value;
+            const res = await API.rateMovie(movie.id, score);
+            if(res.success) {
+                showSpatialAlert(`Rated ${movie.title} ${score} stars!`);
+                modal.classList.add('hidden');
+            } else {
+                showSpatialAlert(res.error || 'Failed to submit rating.');
+            }
+        };
+        
+    } catch (err) {
+        showSpatialAlert('Failed to load movie details.');
+    }
+}
+
+closeModal.addEventListener('click', () => {
+    modal.classList.add('hidden');
+});
+
+// ─── Search Functionality ─────────────────────────────────────────────────
+const searchInput = document.getElementById('search-input');
 let searchDebounce = null;
 searchInput.addEventListener('input', (e) => {
     clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(() => {
-        fetchMovies(e.target.value.trim());
-    }, 400); // 400ms debounce to avoid hammering the API
+    searchDebounce = setTimeout(async () => {
+        const query = e.target.value.trim();
+        if (query.length < 2) {
+            loadDashboardData(); // revert to trending
+            return;
+        }
+        
+        try {
+            const searchRes = await API.fetchTMDB(`/search/movie?query=${encodeURIComponent(query)}`);
+            movieGrid.innerHTML = '';
+            document.querySelector('.section-heading').textContent = `Search Results for "${query}"`;
+            
+            searchRes.results.slice(0, 12).forEach(movie => {
+                if (!movie.poster_path) return;
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.innerHTML = `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" class="movie-poster">`;
+                card.addEventListener('click', () => openMovieModal(movie.id));
+                movieGrid.appendChild(card);
+            });
+        } catch(err) {
+            console.error('Search failed', err);
+        }
+    }, 500);
 });
 
-// ─── Init: Session check + initial data load ──────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-    // Check session — redirect to landing if not authenticated
-    if (!API.isAuthenticated()) {
-        // Allow viewing without login for now, but flag unauthenticated state
-        console.info('User not authenticated. Rating submissions will not persist to backend.');
-    }
-
-    // Always load movies from TMDB on startup
-    fetchMovies();
+// ─── Initialize SPA ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuthAndRoute();
 });

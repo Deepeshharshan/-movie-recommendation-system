@@ -1,83 +1,92 @@
-/**
- * api.js - Centralized Flask Backend Communications
- * Preserves the Spatial UI while routing actions to the backend.
- */
-const FLASK_BASE_URL = 'http://127.0.0.1:5002'; // Default local Flask port
+// ==========================================================================
+// VISIONCINE API CLIENT
+// Centralized communication layer for Flask Backend + TMDB
+// ==========================================================================
+
+const FLASK_BASE = 'http://127.0.0.1:5002';
+const TMDB_BASE  = 'https://api.themoviedb.org/3';
+const TMDB_KEY   = '1ce706eba9d04d9aabca93cb7cc91efd';
 
 const API = {
-    // Session Management
-    getToken() {
-        return localStorage.getItem('visioncine_token');
+
+    // ─── Internal state ────────────────────────────────────────────────────
+    _currentUser: null,
+
+    setCurrentUser(username) {
+        this._currentUser = username;
+        localStorage.setItem('movie_user', username);
     },
 
-    setToken(token) {
-        localStorage.setItem('visioncine_token', token);
+    clearCurrentUser() {
+        this._currentUser = null;
+        localStorage.removeItem('movie_user');
     },
 
-    clearToken() {
-        localStorage.removeItem('visioncine_token');
+    getCurrentUser() {
+        return this._currentUser || localStorage.getItem('movie_user');
     },
 
     isAuthenticated() {
-        return !!this.getToken();
+        return !!this.getCurrentUser();
     },
 
-    // Core Fetch Wrapper
+    // ─── Flask Backend Request Wrapper ─────────────────────────────────────
     async request(endpoint, method = 'GET', data = null) {
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-
-        const token = this.getToken();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`; // Standard JWT bearer format
-        }
-
         const config = {
             method,
-            headers,
-            credentials: 'include' // Ensures Flask-Login session cookies are sent
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
         };
-
         if (data && (method === 'POST' || method === 'PUT')) {
             config.body = JSON.stringify(data);
         }
-
         try {
-            const response = await fetch(`${FLASK_BASE_URL}${endpoint}`, config);
-            const result = await response.json().catch(() => ({})); // Handle empty responses safely
-            
-            if (!response.ok) {
-                throw new Error(result.error || result.message || 'Backend request failed');
-            }
-            
-            return result;
+            const response = await fetch(`${FLASK_BASE}${endpoint}`, config);
+            const result = await response.json().catch(() => ({}));
+            return { success: response.ok, ...result };
         } catch (error) {
-            console.error(`API Error on ${endpoint}:`, error);
-            throw error; // Let the caller catch and show UI alerts
+            console.error(`Flask API Error [${endpoint}]:`, error);
+            return { success: false, error: 'Network error. Is the backend running?' };
         }
     },
 
-    // Backend Endpoints
-    async login(email, password) {
-        // Expected payload structure
-        return this.request('/login', 'POST', { email, password });
+    // ─── Direct TMDB Request ───────────────────────────────────────────────
+    async fetchTMDB(path) {
+        const sep = path.includes('?') ? '&' : '?';
+        const url = `${TMDB_BASE}${path}${sep}api_key=${TMDB_KEY}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`TMDB error: ${response.status}`);
+        return response.json();
     },
 
-    async register(firstName, lastName, email, password) {
-        return this.request('/register', 'POST', { 
-            first_name: firstName, 
-            last_name: lastName, 
-            email, 
-            password 
+    // ─── Auth Methods ──────────────────────────────────────────────────────
+    async login(username, password) {
+        return this.request('/auth/login', 'POST', { email: username, password });
+    },
+
+    async register(username, password) {
+        // Backend register requires email; use username@visioncine.local as a fallback
+        return this.request('/auth/register', 'POST', {
+            first_name: username,
+            last_name: '',
+            email: `${username}@visioncine.local`,
+            password
         });
     },
 
-    async submitRating(movieId, rating) {
-        return this.request('/rate', 'POST', { movie_id: movieId, rating });
+    async logout() {
+        const result = await this.request('/auth/logout', 'POST');
+        if (result.success) this.clearCurrentUser();
+        return result;
+    },
+
+    // ─── Movie Methods ─────────────────────────────────────────────────────
+    async rateMovie(movieId, score) {
+        // First ensure the movie is cached in the backend DB via TMDB
+        return this.request('/api/movie/rate', 'POST', { tmdb_id: movieId, score });
     },
 
     async getProfile() {
-        return this.request('/profile', 'GET');
+        return this.request('/users/profile', 'GET');
     }
 };

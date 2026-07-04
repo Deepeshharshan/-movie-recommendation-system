@@ -29,10 +29,12 @@ def register():
         return redirect(url_for("movies.home"))
 
     if request.method == "POST":
-        # Support JSON for the Spatial UI API
+        # Support JSON for the Spatial UI API (SPA sends username + email)
         if request.is_json:
-            username = (request.json.get("first_name", "") + " " + request.json.get("last_name", "")).strip()
-            email = request.json.get("email", "").strip().lower()
+            # SPA may send 'username' directly OR first_name + email
+            raw_username = request.json.get("username") or request.json.get("first_name", "")
+            username = raw_username.strip()
+            email = request.json.get("email", f"{username}@visioncine.local").strip().lower()
             password = request.json.get("password", "")
         else:
             username = request.form.get("username", "").strip()
@@ -79,7 +81,8 @@ def login():
 
     if request.method == "POST":
         if request.is_json:
-            identifier = request.json.get("email", "").strip()
+            # Accept both 'username' and 'email' keys from the SPA
+            identifier = (request.json.get("username") or request.json.get("email", "")).strip()
             password = request.json.get("password", "")
             remember = True
         else:

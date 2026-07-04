@@ -3,26 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cinematic Vision | Movie Recommendations</title>
+    <title>VISIONCINE | Cinematic Experience</title>
+    <!-- CSS is loaded natively. For Flask integration, replace with url_for -->
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Feedback Alert System -->
-    <div id="feedback-layer" class="feedback-layer hidden">
-        <div class="glass-alert" id="feedback-message"></div>
+
+    <!-- ==========================================
+         LAYER 1: AUTH GATE (LANDING / LOGIN)
+         ========================================== -->
+    <div id="auth-gate" class="auth-gate-layer">
+        <!-- Ambient Background Glow -->
+        <div class="auth-ambient-glow"></div>
+        
+        <!-- Auth Container -->
+        <div class="auth-container">
+            <h1 class="brand-title">VISION<span class="brand-accent">CINE</span></h1>
+            <p class="brand-subtitle">The next generation of cinematic discovery.</p>
+            
+            <!-- Machined Glass Login Card -->
+            <div class="auth-glass-card">
+                <h2 class="auth-header">Access Portal</h2>
+                
+                <!-- Micro-Notification Container -->
+                <div id="auth-notification" class="auth-notification hidden"></div>
+                
+                <form id="auth-form" class="auth-form" autocomplete="off">
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" class="spatial-input" placeholder="Enter your username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" class="spatial-input" placeholder="Enter your password" required>
+                    </div>
+                    
+                    <!-- Hidden field to toggle Login vs Register mode -->
+                    <input type="hidden" id="auth-mode" value="login">
+
+                    <button type="submit" class="pill-btn primary-btn" id="login-submit-btn">
+                        <span class="btn-text">Sign In</span>
+                        <div class="spinner hidden" id="login-spinner"></div>
+                    </button>
+                    
+                    <div class="auth-toggle">
+                        <span class="toggle-text" id="toggle-msg">Need access?</span>
+                        <a href="#" id="toggle-auth-mode" class="toggle-link">Create Account</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <!-- Main Spatial Interface -->
-    <div class="spatial-app-container">
+
+    <!-- ==========================================
+         LAYER 2: MAIN DASHBOARD (HIDDEN ON LOAD)
+         ========================================== -->
+    <div id="dashboard-layer" class="dashboard-layer hidden">
         
+        <!-- Feedback Alert System (Toasts) -->
+        <div id="feedback-layer" class="feedback-layer hidden">
+            <div class="glass-alert" id="feedback-message"></div>
+        </div>
+
         <!-- Navbar -->
         <nav class="glass-nav">
             <div class="nav-brand">VISION<span class="brand-accent">CINE</span></div>
             <div class="search-container">
-                <input type="text" id="search-input" class="glass-input" placeholder="Search for movies...">
+                <input type="text" id="search-input" class="spatial-input search-input" placeholder="Search for movies...">
             </div>
-            <div class="user-profile"></div>
+            <div class="user-profile">
+                <span id="nav-username" class="nav-username"></span>
+                <button id="logout-btn" class="pill-btn secondary-btn small-btn">Sign Out</button>
+            </div>
         </nav>
 
         <!-- Massive Hero Showcase -->
@@ -30,7 +84,7 @@
             <div class="hero-content">
                 <h1 class="hero-title skeleton-text" id="hero-title">Featured Movie</h1>
                 <p class="hero-desc skeleton-text-multiline" id="hero-desc">Discover the next generation of cinematic experiences.</p>
-                <button class="glass-btn primary" id="hero-action">Watch Trailer</button>
+                <button class="pill-btn primary-btn" id="hero-action">Watch Trailer</button>
             </div>
             <div class="hero-shadow-shield"></div>
         </header>
@@ -45,14 +99,18 @@
                 <div class="movie-card skeleton-card"></div>
                 <div class="movie-card skeleton-card"></div>
                 <div class="movie-card skeleton-card"></div>
+                <div class="movie-card skeleton-card"></div>
+                <div class="movie-card skeleton-card"></div>
             </div>
         </main>
 
     </div>
 
-    <!-- Movie Details & Rating Modal -->
+    <!-- ==========================================
+         LAYER 3: MOVIE DETAILS MODAL
+         ========================================== -->
     <div id="movie-modal" class="modal hidden">
-        <div class="modal-content">
+        <div class="modal-content machined-glass">
             <span id="close-modal" class="close-btn">&times;</span>
             <div class="modal-body centered-modal">
                 <img id="modal-img" src="" alt="Movie Poster" class="modal-poster">
@@ -65,17 +123,17 @@
                     </div>
                     <p id="modal-desc">Movie description goes here.</p>
                     
-                    <div class="rating-box">
+                    <div class="rating-box spatial-input-box">
                         <div class="current-rating">Rating: <span id="modal-rating">5.0</span>/5 ⭐️</div>
                         <div class="rate-action">
-                            <select id="user-rating-input" class="glass-input rating-select">
+                            <select id="user-rating-input" class="spatial-input rating-select">
                                 <option value="5">5 Stars</option>
                                 <option value="4">4 Stars</option>
                                 <option value="3">3 Stars</option>
                                 <option value="2">2 Stars</option>
                                 <option value="1">1 Star</option>
                             </select>
-                            <button id="submit-rating-btn" class="glass-btn primary small-btn">Submit Rating</button>
+                            <button id="submit-rating-btn" class="pill-btn primary-btn small-btn">Submit Rating</button>
                         </div>
                     </div>
                 </div>
@@ -83,6 +141,7 @@
         </div>
     </div>
 
+    <!-- Scripts are loaded natively. For Flask integration, replace with url_for -->
     <script src="api.js"></script>
     <script src="app.js"></script>
 </body>

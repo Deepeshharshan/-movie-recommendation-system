@@ -32,10 +32,10 @@ def _upsert_movie_from_tmdb(data):
 
 
 @movies_bp.route("/")
-def home():
-    if current_user.is_authenticated:
-        return render_template("index.html")
-    return render_template("landing.html")
+@movies_bp.route("/search")
+@movies_bp.route("/genre/<path:rest>")
+def home(**kwargs):
+    return render_template("index.html")
 
 
 @movies_bp.route("/search")
