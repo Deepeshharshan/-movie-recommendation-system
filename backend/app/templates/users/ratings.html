@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "partials/movie_card.html" import movie_card %}
+{% block title %}My Ratings - CineMatch{% endblock %}
+{% block content %}
+<section class="row-section">
+    <h2>My Ratings</h2>
+    {% if movies %}
+        <div class="movie-grid">
+            {% for movie in movies %}
+                <div class="movie-card-wrap">
+                    {{ movie_card(movie) }}
+                    <span class="my-score">Your rating: {{ movie.user_score }} / 5</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">You haven't rated any movies yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

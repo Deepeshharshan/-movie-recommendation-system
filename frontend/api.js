@@ -2,7 +2,7 @@
  * api.js - Centralized Flask Backend Communications
  * Preserves the Spatial UI while routing actions to the backend.
  */
-const FLASK_BASE_URL = 'http://127.0.0.1:5000'; // Default local Flask port
+const FLASK_BASE_URL = 'http://127.0.0.1:5002'; // Default local Flask port
 
 const API = {
     // Session Management
@@ -36,6 +36,7 @@ const API = {
         const config = {
             method,
             headers,
+            credentials: 'include' // Ensures Flask-Login session cookies are sent
         };
 
         if (data && (method === 'POST' || method === 'PUT')) {

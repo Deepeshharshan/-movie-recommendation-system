@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "partials/movie_card.html" import movie_card %}
+{% block title %}My Favorites - CineMatch{% endblock %}
+{% block content %}
+<section class="row-section">
+    <h2>My Favorites</h2>
+    {% if movies %}
+        <div class="movie-grid">
+            {% for movie in movies %}{{ movie_card(movie) }}{% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">You haven't favorited any movies yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

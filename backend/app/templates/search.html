@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "partials/movie_card.html" import movie_card %}
+
+{% block title %}Search: {{ query }} - CineMatch{% endblock %}
+
+{% block content %}
+<section class="row-section">
+    <h2>{% if query %}Results for "{{ query }}"{% else %}Search Movies{% endif %}</h2>
+
+    {% if results %}
+        <div class="movie-grid">
+            {% for movie in results %}
+                {{ movie_card(movie) }}
+            {% endfor %}
+        </div>
+
+        <div class="pagination">
+            {% if page > 1 %}
+                <a href="?q={{ query }}&page={{ page - 1 }}" class="btn-secondary">Previous</a>
+            {% endif %}
+            <span>Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %}
+                <a href="?q={{ query }}&page={{ page + 1 }}" class="btn-secondary">Next</a>
+            {% endif %}
+        </div>
+    {% elif query %}
+        <p class="empty-state">No movies found for "{{ query }}". Try another search.</p>
+    {% else %}
+        <p class="empty-state">Type a movie title in the search bar above to get started.</p>
+    {% endif %}
+</section>
+{% endblock %}

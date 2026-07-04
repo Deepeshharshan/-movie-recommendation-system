@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "partials/movie_card.html" import movie_card %}
+
+{% block title %}CineMatch - Discover Movies{% endblock %}
+
+{% block content %}
+{% if featured %}
+<section class="hero-banner" style="background-image: linear-gradient(90deg, rgba(15,17,21,0.97) 15%, rgba(15,17,21,0.55) 60%, rgba(15,17,21,0.15) 100%), url('{{ featured.backdrop_url }}');">
+    <div class="hero-banner-inner">
+        <span class="hero-eyebrow">Featured Today</span>
+        <h1>{{ featured.title }}</h1>
+        <p>{{ featured.overview[:220] }}{% if featured.overview|length > 220 %}…{% endif %}</p>
+        <div class="hero-actions">
+            <a href="{{ url_for('movies.movie_details', tmdb_id=featured.id) }}" class="btn-primary">View Details</a>
+            <span class="hero-rating">★ {{ "%.1f"|format(featured.vote_average or 0) }}</span>
+        </div>
+    </div>
+</section>
+{% else %}
+<section class="hero">
+    <h1>Find your next favorite movie</h1>
+    <p>Personalized recommendations, trending picks, and top-rated films — all in one place.</p>
+</section>
+{% endif %}
+
+{% if current_user.is_authenticated %}
+<section class="row-section">
+    <h2>Hi {{ current_user.username }}, here's what's new for you</h2>
+</section>
+{% endif %}
+
+{% if recommendations %}
+<section class="row-section">
+    <h2>Recommended For You</h2>
+    <div class="movie-grid">
+        {% for movie in recommendations %}{{ movie_card(movie) }}{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="row-section">
+    <h2>Trending Now</h2>
+    <div class="movie-grid">
+        {% for movie in trending %}{{ movie_card(movie) }}{% endfor %}
+    </div>
+</section>
+
+<section class="row-section">
+    <h2>Top Rated</h2>
+    <div class="movie-grid">
+        {% for movie in top_rated %}{{ movie_card(movie) }}{% endfor %}
+    </div>
+</section>
+
+<section class="row-section">
+    <h2>Popular Movies</h2>
+    <div class="movie-grid">
+        {% for movie in popular %}{{ movie_card(movie) }}{% endfor %}
+    </div>
+</section>
+
+<section class="row-section">
+    <h2>New Releases</h2>
+    <div class="movie-grid">
+        {% for movie in new_releases %}{{ movie_card(movie) }}{% endfor %}
+    </div>
+</section>
+
+{% if recent_views %}
+<section class="row-section">
+    <h2>Continue Watching</h2>
+    <div class="movie-grid">
+        {% for movie in recent_views %}{{ movie_card(movie) }}{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="row-section">
+    <h2>Browse by Genre</h2>
+    <a href="{{ url_for('movies.genres') }}" class="btn-secondary">Explore All Genres →</a>
+</section>
+{% endblock %}

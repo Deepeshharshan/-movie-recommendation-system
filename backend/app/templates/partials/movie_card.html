@@ -1,0 +1,16 @@
+{% macro movie_card(movie) %}
+<a href="{{ url_for('movies.movie_details', tmdb_id=movie.tmdb_id or movie.id) }}" class="movie-card">
+    <div class="poster-wrap">
+        {% if movie.poster_url %}
+            <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" loading="lazy">
+        {% else %}
+            <div class="poster-placeholder">No Image</div>
+        {% endif %}
+        <span class="rating-badge">★ {{ "%.1f"|format(movie.vote_average or 0) }}</span>
+    </div>
+    <div class="movie-card-body">
+        <h4>{{ movie.title }}</h4>
+        <span class="movie-year">{{ (movie.release_date or "")[:4] }}</span>
+    </div>
+</a>
+{% endmacro %}

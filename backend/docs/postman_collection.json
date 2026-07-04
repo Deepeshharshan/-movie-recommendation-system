@@ -1,0 +1,165 @@
+{
+  "info": {
+    "name": "Movie Recommendation System API",
+    "description": "API collection for the CineMatch Flask Backend (Spatial UI connected).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Postman\",\n  \"last_name\": \"Test\",\n  \"email\": \"postman@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Logout User (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Movies",
+      "item": [
+        {
+          "name": "Search Movies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=Batman",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "Batman" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Suggestions API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search-suggestions?q=bat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search-suggestions"],
+              "query": [
+                { "key": "q", "value": "bat" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Features",
+      "item": [
+        {
+          "name": "Rate a Movie",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"score\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/movie/1/rate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "movie", "1", "rate"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Favorite",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/movie/1/favorite",
+              "host": ["{{base_url}}"],
+              "path": ["api", "movie", "1", "favorite"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Watchlist",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/movie/1/watchlist",
+              "host": ["{{base_url}}"],
+              "path": ["api", "movie", "1", "watchlist"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5002",
+      "type": "string"
+    }
+  ]
+}

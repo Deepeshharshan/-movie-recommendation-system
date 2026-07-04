@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "partials/movie_card.html" import movie_card %}
+{% block title %}My Watchlist - CineMatch{% endblock %}
+{% block content %}
+<section class="row-section">
+    <h2>My Watchlist</h2>
+    {% if movies %}
+        <div class="movie-grid">
+            {% for movie in movies %}{{ movie_card(movie) }}{% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">Your watchlist is empty. Add movies from their detail page.</p>
+    {% endif %}
+</section>
+{% endblock %}
