@@ -1,0 +1,23 @@
+# =============================================================================
+# VISIONCINE — terraform.tfvars.example
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is git-ignored — NEVER commit real values.
+# =============================================================================
+
+aws_region         = "us-east-1"
+environment        = "dev"
+project_name       = "visioncine"
+
+# Network
+vpc_cidr           = "10.0.0.0/16"
+public_subnet_cidr = "10.0.1.0/24"
+availability_zone  = "us-east-1a"
+
+# EC2
+ami_id             = "ami-0c7217cdde317cfec"
+instance_type      = "t2.micro"
+key_pair_name      = "visioncine-key"
+
+# Security — replace with your own IP for production
+allowed_ssh_cidr   = "0.0.0.0/0"
+app_port           = 5002

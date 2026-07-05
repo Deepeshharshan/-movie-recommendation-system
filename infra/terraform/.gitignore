@@ -1,0 +1,15 @@
+# Terraform state files — contain sensitive data, NEVER commit
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+
+# Real variable values — NEVER commit
+terraform.tfvars
+
+# Generated SSH private key — NEVER commit
+*.pem
+
+# macOS
+.DS_Store
