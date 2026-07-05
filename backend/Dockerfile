@@ -4,7 +4,7 @@
 # =============================================================================
 
 # ── Stage 1: Builder — install deps in isolation ─────────────────────────────
-FROM python:3.9-slim AS builder
+FROM python:3.10-slim AS builder
 
 # System deps for compiling any C-extension packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
 # ── Stage 2: Runtime — lean final image ──────────────────────────────────────
-FROM python:3.9-slim AS runtime
+FROM python:3.10-slim AS runtime
 
 LABEL maintainer="VISIONCINE <deepeshharshan>"
 LABEL description="VisionCine Movie Recommendation System – Flask API"
