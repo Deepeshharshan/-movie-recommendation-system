@@ -45,6 +45,7 @@ const DOM = {
     navAvatar:       document.getElementById('nav-avatar'),
     navProfileBtn:   document.getElementById('nav-profile-btn'),
     navLogoutBtn:    document.getElementById('nav-logout-btn'),
+    navForyouBtn:    document.getElementById('nav-foryou-btn'),
     searchInput:     document.getElementById('search-input'),
 
     // Dashboard
@@ -134,11 +135,37 @@ function clearAuthAlert() {
 }
 
 // ─── View Router ───────────────────────────────────────────────────────────────
+window.navigateTo = function(path) {
+    if (window.location.pathname !== path) {
+        window.history.pushState({}, '', path);
+    }
+    handleRoute();
+};
+
+window.addEventListener('popstate', handleRoute);
+
+function handleRoute() {
+    if (!STATE.user) {
+        showView(DOM.viewAuth);
+        return;
+    }
+
+    const path = window.location.pathname;
+    if (path === '/for-you') {
+        const foryouView = document.getElementById('view-for-you');
+        if (foryouView) showView(foryouView);
+        if (typeof window.renderForYouPage === 'function') window.renderForYouPage();
+    } else if (path === '/') {
+        revealDashboard();
+    } else {
+        revealDashboard(); // Fallback
+    }
+}
+
 function showView(viewEl) {
     const allViews = [
         DOM.viewAuth, DOM.viewDashboard, DOM.viewProfile,
         document.getElementById('view-for-you'),
-        document.getElementById('view-subscription'),
     ].filter(Boolean);
 
     allViews.forEach(v => {
@@ -226,7 +253,7 @@ function renderLibrary() {
 
     DOM.libraryGrid.innerHTML = STATE.watchlist.map(m => `
         <div class="library-card">
-            <img src="https://image.tmdb.org/t/p/w300${m.poster_path}" alt="${m.title}" loading="lazy">
+            <img src="/api/poster/w300${m.poster_path}" alt="${m.title}" loading="lazy">
             <button class="library-remove-btn" data-id="${m.id}" title="Remove" aria-label="Remove ${m.title}">&times;</button>
         </div>
     `).join('');
@@ -267,7 +294,7 @@ async function renderHero(movie) {
     STATE.heroTrailerKey = null;
 
     DOM.heroBg.style.backgroundImage = movie.backdrop_path
-        ? `url(https://image.tmdb.org/t/p/original${movie.backdrop_path})`
+        ? `url(/api/poster/original${movie.backdrop_path})`
         : '';
 
     DOM.heroBadge.className = 'hero-badge';
@@ -306,7 +333,7 @@ function renderMovieGrid(movies) {
 
     DOM.movieGrid.innerHTML = movies.filter(m => m.poster_path).map(m => `
         <div class="movie-card" data-id="${m.id}" data-title="${(m.title || '').replace(/"/g, '&quot;')}">
-            <img class="movie-card-img" src="https://image.tmdb.org/t/p/w500${m.poster_path}" alt="${m.title || ''}" loading="lazy">
+            <img class="movie-card-img" src="/api/poster/w500${m.poster_path}" alt="${m.title || ''}" loading="lazy">
             <div class="movie-card-overlay">
                 <p class="movie-card-title">${m.title || m.original_title || ''}</p>
                 <p class="movie-card-year">${(m.release_date || '').substring(0, 4)}</p>
@@ -328,7 +355,7 @@ function renderForYouGrid(movies) {
     DOM.foryouSection.style.display = 'block';
     DOM.foryouGrid.innerHTML = movies.filter(m => m.poster_path).slice(0, 6).map(m => `
         <div class="movie-card" data-id="${m.id}" data-title="${(m.title || '').replace(/"/g, '&quot;')}">
-            <img class="movie-card-img" src="https://image.tmdb.org/t/p/w500${m.poster_path}" alt="${m.title || ''}" loading="lazy">
+            <img class="movie-card-img" src="/api/poster/w500${m.poster_path}" alt="${m.title || ''}" loading="lazy">
             <div class="movie-card-overlay">
                 <p class="movie-card-title">${m.title || m.original_title || ''}</p>
                 <p class="movie-card-year">${(m.release_date || '').substring(0, 4)}</p>
@@ -379,9 +406,15 @@ async function loadMovies(filter = 'all') {
 
     try {
         const endpoint = FILTER_ENDPOINTS[filter] || FILTER_ENDPOINTS.all;
-        const data = await API.fetchTMDB(endpoint);
+        const sep = endpoint.includes('?') ? '&' : '?';
         
-        let results = data.results || [];
+        // Fetch page 1 and 2 in parallel to get 40 titles (fully fills grid rows)
+        const [data1, data2] = await Promise.all([
+            API.fetchTMDB(`${endpoint}${sep}page=1`),
+            API.fetchTMDB(`${endpoint}${sep}page=2`).catch(() => ({ results: [] }))
+        ]);
+        
+        let results = [...(data1.results || []), ...(data2.results || [])];
         
         // Randomize the order if it's a general list so the dashboard looks fresh every time
         if (filter === 'all' || filter === 'trending') {
@@ -534,7 +567,7 @@ async function openDetailsOverlay(tmdbId) {
         STATE.activeMovieData = movie;
 
         DOM.detailsPoster.src = movie.poster_path
-            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            ? `/api/poster/w500${movie.poster_path}`
             : '';
         DOM.detailsPoster.alt = movie.title || '';
         DOM.detailsTitle.textContent = movie.title || movie.original_title;
@@ -556,7 +589,7 @@ async function openDetailsOverlay(tmdbId) {
             
             if (cast.length > 0) {
                 DOM.detailsCastRow.innerHTML = cast.map(c => {
-                    const imgUrl = c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : '';
+                    const imgUrl = c.profile_path ? `/api/poster/w185${c.profile_path}` : '';
                     const avatarContent = imgUrl 
                         ? `<img class="cast-avatar" src="${imgUrl}" alt="${c.name}" loading="lazy">`
                         : `<div class="cast-avatar no-img">${c.name.charAt(0)}</div>`;
@@ -654,7 +687,8 @@ function openProfile() {
 }
 
 DOM.navProfileBtn.addEventListener('click', openProfile);
-DOM.profileBackBtn.addEventListener('click', () => showView(DOM.viewDashboard));
+DOM.navForyouBtn.addEventListener('click', () => window.navigateTo('/for-you'));
+DOM.profileBackBtn.addEventListener('click', () => window.navigateTo('/'));
 
 DOM.clearLogBtn.addEventListener('click', () => {
     STATE.activityLog = [];
@@ -746,13 +780,10 @@ function revealDashboard() {
 
     // Initialise new page nav buttons (defined in foryou.js / subscription.js)
     if (typeof initForYouNav === 'function') initForYouNav();
-    if (typeof initSubscriptionNav === 'function') initSubscriptionNav();
 
     // Back buttons on new views
     const fyBackBtn  = document.getElementById('fy-back-btn');
-    const subBackBtn = document.getElementById('sub-back-btn');
     if (fyBackBtn  && !fyBackBtn._bound)  { fyBackBtn._bound  = true; fyBackBtn.addEventListener('click',  () => showView(DOM.viewDashboard)); }
-    if (subBackBtn && !subBackBtn._bound) { subBackBtn._bound = true; subBackBtn.addEventListener('click', () => showView(DOM.viewDashboard)); }
 }
 
 // ─── Logout ────────────────────────────────────────────────────────────────────
@@ -787,7 +818,7 @@ DOM.navLogoutBtn.addEventListener('click', async () => {
         STATE.user         = savedUser;
         STATE.sessionStart = localStorage.getItem('vc_session_start') || new Date().toISOString();
         API.setCurrentUser(savedUser);
-        revealDashboard();
+        handleRoute();
     } else {
         showView(DOM.viewAuth);
     }

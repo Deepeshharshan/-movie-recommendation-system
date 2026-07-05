@@ -112,12 +112,4 @@ const API = {
     async getStats() {
         return this.request('/api/stats', 'GET');
     },
-
-    async getPremiumInfo() {
-        return this.request('/api/premium', 'GET');
-    },
-
-    async getPremiumCollections() {
-        return this.request('/api/exclusive', 'GET');
-    },
 };

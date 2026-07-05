@@ -462,16 +462,11 @@ function renderGenres(stats) {
 }
 
 /* ─── Nav wiring ───────────────────────── */
-function initForYouNav() {
-    const btn = document.getElementById('nav-foryou-btn');
-    if (btn) {
-        btn.addEventListener('click', () => {
-            showView(document.getElementById('view-for-you'));
-            document.getElementById('fy-results').classList.add('hidden');
-            document.getElementById('fy-questionnaire').classList.remove('hidden');
-            initQuestionnaire();
-        });
-    }
+window.renderForYouPage = function() {
+    document.getElementById('fy-results').classList.add('hidden');
+    document.getElementById('fy-questionnaire').classList.remove('hidden');
+    initQuestionnaire();
+};
 
     const restartBtn = document.getElementById('fy-restart-btn');
     if (restartBtn) {
@@ -535,4 +530,3 @@ function initForYouNav() {
             body.scrollTop = body.scrollHeight;
         });
     });
-}

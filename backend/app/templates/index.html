@@ -90,10 +90,6 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
                 For You
             </button>
-            <button id="nav-subscription-btn" class="nav-text-btn" aria-label="Premium">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M2 7h20"/><path d="m2 7 10 15L22 7"/><path d="M12 22 7.5 7"/><path d="m12 22 4.5-15"/></svg>
-                Premium
-            </button>
             <button id="nav-profile-btn" class="nav-icon-btn" aria-label="Profile">
                 <div id="nav-avatar" class="nav-avatar">U</div>
             </button>
@@ -464,7 +460,7 @@
 
 <!-- FLOATING AI ASSISTANT -->
 <div class="ai-fab" id="ai-fab">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
 </div>
 <div class="ai-panel hidden" id="ai-panel">
     <div class="ai-panel-header">
@@ -481,134 +477,6 @@
             <button class="ai-suggestion-btn">Recommend an underrated thriller</button>
             <button class="ai-suggestion-btn">Show me Oscar-winning movies</button>
         </div>
-    </div>
-</div>
-
-<!-- ============================================================
-     VIEW 5: PREMIUM
-     ============================================================ -->
-<div id="view-subscription" class="view view-subscription hidden">
-
-    <!-- HERO -->
-    <section class="sub-hero">
-        <div class="sub-hero-bg"></div>
-        <div class="sub-hero-scrim"></div>
-        <div class="sub-hero-content">
-            <div class="sub-hero-eyebrow">VisionCine</div>
-            <h1 class="sub-hero-title">Premium</h1>
-            <p class="sub-hero-sub">Unlimited Entertainment. Any Device. Anytime.</p>
-        </div>
-    </section>
-
-    <div class="sub-page-body">
-
-        <!-- Back button -->
-        <div class="fy-back-row">
-            <button class="btn-ghost fy-back-btn" id="sub-back-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-                Back to Dashboard
-            </button>
-        </div>
-        
-        <!-- Premium Exclusive Collections -->
-        <section class="sub-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Premium Exclusive Collections</h2>
-                <span class="fy-section-sub">Curated lists available only on Premium</span>
-            </div>
-            <div id="premium-exclusive-grid" class="premium-collections-grid">
-                <!-- Injected via JS -->
-            </div>
-        </section>
-
-        <!-- Movie Quality Badges -->
-        <section class="sub-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Uncompromised Quality</h2>
-            </div>
-            <div class="quality-badges-wrap" id="quality-badges-wrap">
-                <!-- Injected via JS -->
-            </div>
-        </section>
-
-        <!-- Pricing Cards -->
-        <section class="sub-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Choose Your Plan</h2>
-                <span class="fy-section-sub">Upgrade or downgrade anytime</span>
-            </div>
-            <div id="sub-pricing-grid" class="sub-pricing-grid"></div>
-        </section>
-
-        <!-- Feature Comparison Table -->
-        <section class="sub-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Compare Plans</h2>
-            </div>
-            <div class="sub-table-wrap">
-                <table class="sub-compare-table">
-                    <thead>
-                        <tr>
-                            <th class="compare-feat-label">Feature</th>
-                            <th>Starter</th>
-                            <th>Premium</th>
-                            <th>Ultimate</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sub-compare-body"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Premium Benefits -->
-        <section class="sub-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Premium Benefits</h2>
-            </div>
-            <div class="premium-benefits-grid" id="premium-benefits-grid">
-                <!-- Injected via JS -->
-            </div>
-        </section>
-
-        <!-- Current Subscription -->
-        <section class="sub-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Current Subscription</h2>
-            </div>
-            <div id="sub-current-plan"></div>
-        </section>
-
-        <!-- Payment Section -->
-        <section class="sub-section" id="sub-payment-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Payment</h2>
-                <span class="fy-section-sub" id="sub-pay-plan-name">Premium — ₹299/month</span>
-            </div>
-            <div class="sub-payment-wrap">
-                <p class="sub-pay-label">Select Payment Method</p>
-                <div id="sub-payment-methods" class="sub-payment-grid"></div>
-                <div class="sub-pay-form">
-                    <div class="sub-pay-row">
-                        <input class="field-input" type="text" placeholder="Cardholder name / UPI ID" id="sub-pay-name">
-                    </div>
-                    <div class="sub-pay-row">
-                        <input class="field-input" type="text" placeholder="Card number or UPI handle" id="sub-pay-number">
-                        <input class="field-input sub-pay-small" type="text" placeholder="MM/YY" id="sub-pay-exp">
-                        <input class="field-input sub-pay-small" type="text" placeholder="CVV" id="sub-pay-cvv">
-                    </div>
-                    <button id="sub-pay-btn" class="btn-primary btn-full sub-pay-cta">Complete Payment</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Settings -->
-        <section class="sub-section">
-            <div class="fy-section-head">
-                <h2 class="fy-section-title">Subscription Settings</h2>
-            </div>
-            <div id="sub-settings-section"></div>
-        </section>
-
     </div>
 </div>
 
@@ -693,6 +561,5 @@
 <script src="{{ url_for('static', filename='spatial/api.js') }}"></script>
 <script src="{{ url_for('static', filename='spatial/app.js') }}"></script>
 <script src="{{ url_for('static', filename='spatial/foryou.js') }}"></script>
-<script src="{{ url_for('static', filename='spatial/subscription.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,13 @@
+backend/flask.log
+backend/flask.pid
+backend/instance/flask.log
+backend/instance/app.db
+.DS_Store
+backend/venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/models/__pycache__/
+backend/app/routes/__pycache__/
+backend/app/services/__pycache__/
+backend/tests/__pycache__/
+.pytest_cache/

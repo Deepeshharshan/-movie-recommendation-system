@@ -56,13 +56,15 @@ class TMDbService:
     def poster_url(poster_path, size="w500"):
         if not poster_path:
             return None
-        return f"https://image.tmdb.org/t/p/{size}{poster_path}"
+        path = poster_path if poster_path.startswith("/") else f"/{poster_path}"
+        return f"/api/poster/{size}{path}"
 
     @staticmethod
     def backdrop_url(backdrop_path, size="original"):
         if not backdrop_path:
             return None
-        return f"https://image.tmdb.org/t/p/{size}{backdrop_path}"
+        path = backdrop_path if backdrop_path.startswith("/") else f"/{backdrop_path}"
+        return f"/api/poster/{size}{path}"
 
 
 tmdb_service = TMDbService()

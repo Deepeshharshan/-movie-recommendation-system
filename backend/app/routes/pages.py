@@ -1,15 +1,13 @@
 """
 VISIONCINE — pages.py
-Blueprint for the For You and Subscription page API endpoints.
+Blueprint for the For You page API endpoints.
 
 Endpoints:
   GET /api/recommendations   — personalised movie recommendations
   GET /api/trending          — trending movies from TMDb
   GET /api/history           — authenticated user's view history
   GET /api/stats             — authenticated user's quick statistics
-  GET /api/subscription      — current subscription plan info
   GET /for-you               — serves the SPA (index.html handles routing)
-  GET /subscription          — serves the SPA (index.html handles routing)
 """
 from collections import Counter
 from flask import Blueprint, jsonify, render_template, current_app
@@ -33,7 +31,6 @@ GENRE_MAP = {
 
 # ── SPA route handlers ─────────────────────────────────────────────────────────
 @pages_bp.route("/for-you")
-@pages_bp.route("/subscription")
 def spa_passthrough(**kwargs):
     """All SPA sub-routes just serve index.html; JS handles the view."""
     return render_template("index.html")
@@ -174,54 +171,7 @@ def get_stats():
     })
 
 
-# ── /api/premium ──────────────────────────────────────────────────────────────
-@pages_bp.route("/api/premium")
-def get_premium():
-    """Return the current user's premium plan."""
-    plan = {
-        "plan": "Starter",
-        "price": "₹99/month",
-        "billing_date": "5th of every month",
-        "renewal_date": "2026-08-05",
-        "status": "Active",
-        "features": ["HD", "1 Device", "Basic Recommendations"],
-    }
-    return jsonify(plan)
 
-
-# ── /api/exclusive ────────────────────────────────────────────────────────────
-@pages_bp.route("/api/exclusive")
-def get_exclusive():
-    """Return mock premium exclusive collections data."""
-    # In a real app, these would be curated TMDB lists or queries
-    collections = [
-        {"id": "c1", "title": "Christopher Nolan Collection", "badge": "Director's Cut"},
-        {"id": "c2", "title": "4K HDR Masterpieces", "badge": "4K HDR10+"},
-        {"id": "c3", "title": "Oscar Best Pictures", "badge": "Award Winning"},
-        {"id": "c4", "title": "Marvel Cinematic Universe", "badge": "IMAX Enhanced"},
-        {"id": "c5", "title": "A24 Exclusives", "badge": "Premium Exclusive"},
-    ]
-    # We'll just fetch trending and distribute it to these collections as mock data
-    try:
-        data = tmdb_service.get_trending(time_window="week")
-        movies = data.get("results", [])[:20]
-    except TMDbError:
-        movies = []
-
-    results = []
-    for i, col in enumerate(collections):
-        col_movies = []
-        for m in movies[i*4:(i+1)*4]:
-            d = dict(m)
-            d["poster_url"] = tmdb_service.poster_url(m.get("poster_path"))
-            d["backdrop_url"] = tmdb_service.backdrop_url(m.get("backdrop_path"))
-            col_movies.append(d)
-        results.append({
-            "collection": col,
-            "movies": col_movies
-        })
-        
-    return jsonify({"collections": results})
 
 
 from flask import request
@@ -247,8 +197,7 @@ def get_mood_recommendations():
     else:
         try:
             movies_data = tmdb_service.get_popular().get("results", [])[:limit]
-            movies = [Movie(**m) if 'title' in m else None for m in movies_data]
-            movies = [m for m in movies if m]
+            movies = movies_data
         except:
             movies = []
             
