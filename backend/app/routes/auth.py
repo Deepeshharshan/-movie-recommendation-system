@@ -54,7 +54,7 @@ def register():
                 return jsonify({"error": errors[0]}), 400
             for e in errors:
                 flash(e, "error")
-            return render_template("landing.html", username=username, email=email)
+            return render_template("index.html", username=username, email=email)
 
         user = User(username=username, email=email)
         user.set_password(password)
@@ -69,7 +69,7 @@ def register():
         flash(f"Welcome, {user.username}! Your account has been created.", "success")
         return redirect(url_for("movies.home"))
 
-    return render_template("landing.html")
+    return render_template("index.html")
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -107,9 +107,9 @@ def login():
             return jsonify({"error": "Invalid credentials."}), 401
             
         flash("Invalid username/email or password.", "error")
-        return render_template("landing.html", username=identifier)
+        return render_template("index.html", username=identifier)
 
-    return render_template("landing.html")
+    return render_template("index.html")
 
 
 @auth_bp.route("/logout", methods=["GET", "POST"])
