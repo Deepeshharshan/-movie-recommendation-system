@@ -36,7 +36,7 @@ def profile_summary():
     watchlist_count = WatchlistItem.query.filter_by(user_id=current_user.id).count()
     ratings_count = Rating.query.filter_by(user_id=current_user.id).count()
     return jsonify({
-        "username": current_user.first_name,
+        "username": current_user.username,
         "email": current_user.email,
         "favorites_count": favorites_count,
         "watchlist_count": watchlist_count,
