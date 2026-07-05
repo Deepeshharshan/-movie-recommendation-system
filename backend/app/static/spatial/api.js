@@ -3,7 +3,9 @@
 // Centralized communication layer for Flask Backend + TMDB
 // ==========================================================================
 
-const FLASK_BASE = 'http://127.0.0.1:5002';
+const FLASK_BASE = window.location.origin.includes('127.0.0.1') || window.location.origin.includes('localhost')
+    ? 'http://127.0.0.1:5002'  // local dev
+    : '';                       // production: same-origin (EC2 serves both frontend + API)
 const TMDB_BASE  = 'https://api.themoviedb.org/3';
 const TMDB_KEY   = '1ce706eba9d04d9aabca93cb7cc91efd';
 
