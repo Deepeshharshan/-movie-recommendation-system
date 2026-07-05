@@ -142,18 +142,21 @@ print('✅ API routes verified: /, /auth/register, /auth/login')
         // ─── Stage 6: SonarQube Analysis ──────────────────────────────────
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        sonar-scanner \
-                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.projectName="VisionCine Movie Recommendation System" \
-                          -Dsonar.projectVersion=${BUILD_NUMBER} \
-                          -Dsonar.sources=${BACKEND_DIR}/app \
-                          -Dsonar.language=py \
-                          -Dsonar.python.coverage.reportPaths=${BACKEND_DIR}/coverage.xml \
-                          -Dsonar.exclusions=**/__pycache__/**,**/*.pyc,**/venv/**,**/.venv*/**,**/migrations/**,**/tests/**
-                        echo "✅ SonarQube analysis submitted"
-                    """
+                script {
+                    def scannerHome = tool 'SonarScanner'
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                              -Dsonar.projectName="VisionCine Movie Recommendation System" \
+                              -Dsonar.projectVersion=${BUILD_NUMBER} \
+                              -Dsonar.sources=${BACKEND_DIR}/app \
+                              -Dsonar.language=py \
+                              -Dsonar.python.coverage.reportPaths=${BACKEND_DIR}/coverage.xml \
+                              -Dsonar.exclusions=**/__pycache__/**,**/*.pyc,**/venv/**,**/.venv*/**,**/migrations/**,**/tests/**
+                            echo "✅ SonarQube analysis submitted"
+                        """
+                    }
                 }
             }
         }
