@@ -87,11 +87,11 @@
 
         <div class="nav-actions">
             <button id="nav-foryou-btn" class="nav-text-btn" aria-label="For You">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
                 For You
             </button>
-            <button id="nav-subscription-btn" class="nav-text-btn" aria-label="Subscription">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <button id="nav-subscription-btn" class="nav-text-btn" aria-label="Premium">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M2 7h20"/><path d="m2 7 10 15L22 7"/><path d="M12 22 7.5 7"/><path d="m12 22 4.5-15"/></svg>
                 Premium
             </button>
             <button id="nav-profile-btn" class="nav-icon-btn" aria-label="Profile">
@@ -265,7 +265,64 @@
      ============================================================ -->
 <div id="view-for-you" class="view view-for-you hidden">
 
-    <!-- HERO -->
+    <!-- QUESTIONNAIRE CONTAINER (AI Movie Concierge) -->
+    <div id="fy-questionnaire" class="fy-questionnaire">
+        <div class="fy-q-header">
+            <h2 class="fy-q-title">Find Your Perfect Movie</h2>
+            <p class="fy-q-sub">Answer a few questions and VisionCine AI will recommend the best movies based on your current mood and preferences.</p>
+            <div class="fy-q-progress">
+                <div class="fy-q-progress-bar" id="fy-q-progress-bar"></div>
+            </div>
+        </div>
+        
+        <div class="fy-q-steps-container">
+            <!-- Step 1: Mood -->
+            <div class="fy-q-step active" id="fy-step-1">
+                <h3 class="fy-step-title">How are you feeling right now?</h3>
+                <div class="fy-q-grid" id="fy-grid-mood"></div>
+            </div>
+            <!-- Step 2: Genres -->
+            <div class="fy-q-step hidden" id="fy-step-2">
+                <h3 class="fy-step-title">Choose one or more genres</h3>
+                <div class="fy-q-grid" id="fy-grid-genres"></div>
+                <button class="btn-primary fy-q-next-btn" onclick="nextQuestionnaireStep()">Continue</button>
+            </div>
+            <!-- Step 3: Theme -->
+            <div class="fy-q-step hidden" id="fy-step-3">
+                <h3 class="fy-step-title">What theme interests you today?</h3>
+                <div class="fy-q-grid" id="fy-grid-theme"></div>
+            </div>
+            <!-- Step 4: Companions -->
+            <div class="fy-q-step hidden" id="fy-step-4">
+                <h3 class="fy-step-title">Who are you watching with?</h3>
+                <div class="fy-q-grid fy-q-grid-small" id="fy-grid-companions"></div>
+            </div>
+            <!-- Step 5: Language -->
+            <div class="fy-q-step hidden" id="fy-step-5">
+                <h3 class="fy-step-title">Preferred Language</h3>
+                <div class="fy-q-grid fy-q-grid-small" id="fy-grid-language"></div>
+            </div>
+            <!-- Step 6: Length -->
+            <div class="fy-q-step hidden" id="fy-step-6">
+                <h3 class="fy-step-title">Movie Length</h3>
+                <div class="fy-q-grid fy-q-grid-small" id="fy-grid-length"></div>
+            </div>
+            <!-- Step 7: Release Preference -->
+            <div class="fy-q-step hidden" id="fy-step-7">
+                <h3 class="fy-step-title">Release Preference</h3>
+                <div class="fy-q-grid fy-q-grid-small" id="fy-grid-release"></div>
+            </div>
+            <!-- Step 8: Ending Preference -->
+            <div class="fy-q-step hidden" id="fy-step-8">
+                <h3 class="fy-step-title">Preferred Ending</h3>
+                <div class="fy-q-grid fy-q-grid-small" id="fy-grid-ending"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULTS CONTAINER (Hidden until questionnaire complete) -->
+    <div id="fy-results" class="fy-results hidden">
+        <!-- HERO -->
     <section class="fy-hero">
         <div id="fy-hero-bg" class="fy-hero-bg"></div>
         <div class="fy-hero-scrim"></div>
@@ -295,17 +352,23 @@
 
     <div class="fy-page-body">
 
-        <!-- Back button -->
+        <!-- Back button to dashboard -->
         <div class="fy-back-row">
             <button class="btn-ghost fy-back-btn" id="fy-back-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
                 Back to Dashboard
             </button>
+            <button class="btn-ghost fy-back-btn" id="fy-restart-btn" style="margin-left: 1rem;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Retake Questionnaire
+            </button>
         </div>
 
-        <!-- No ratings notice -->
+        <!-- No ratings notice (modified to use SVG) -->
         <div id="fy-no-ratings-msg" class="fy-no-ratings hidden">
-            <div class="fy-no-ratings-icon">⭐</div>
+            <div class="fy-no-ratings-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            </div>
             <h3>Start Rating Movies</h3>
             <p>Rate movies on the dashboard to receive personalised recommendations here.</p>
         </div>
@@ -396,10 +459,33 @@
         </section>
 
     </div>
+    </div> <!-- END RESULTS CONTAINER -->
+</div>
+
+<!-- FLOATING AI ASSISTANT -->
+<div class="ai-fab" id="ai-fab">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+</div>
+<div class="ai-panel hidden" id="ai-panel">
+    <div class="ai-panel-header">
+        <h4>VisionCine AI</h4>
+        <button id="ai-panel-close" class="btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="ai-panel-body">
+        <p class="ai-msg ai-msg-bot">Hello! I'm your VisionCine AI Assistant. How can I help you find a movie today?</p>
+        <div class="ai-suggestions">
+            <button class="ai-suggestion-btn">Recommend a movie for my mood</button>
+            <button class="ai-suggestion-btn">Suggest a movie similar to Interstellar</button>
+            <button class="ai-suggestion-btn">I only have one hour</button>
+            <button class="ai-suggestion-btn">Recommend a family movie</button>
+            <button class="ai-suggestion-btn">Recommend an underrated thriller</button>
+            <button class="ai-suggestion-btn">Show me Oscar-winning movies</button>
+        </div>
+    </div>
 </div>
 
 <!-- ============================================================
-     VIEW 5: SUBSCRIPTION / PRICING
+     VIEW 5: PREMIUM
      ============================================================ -->
 <div id="view-subscription" class="view view-subscription hidden">
 
@@ -423,6 +509,27 @@
                 Back to Dashboard
             </button>
         </div>
+        
+        <!-- Premium Exclusive Collections -->
+        <section class="sub-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Premium Exclusive Collections</h2>
+                <span class="fy-section-sub">Curated lists available only on Premium</span>
+            </div>
+            <div id="premium-exclusive-grid" class="premium-collections-grid">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+
+        <!-- Movie Quality Badges -->
+        <section class="sub-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Uncompromised Quality</h2>
+            </div>
+            <div class="quality-badges-wrap" id="quality-badges-wrap">
+                <!-- Injected via JS -->
+            </div>
+        </section>
 
         <!-- Pricing Cards -->
         <section class="sub-section">
@@ -450,6 +557,16 @@
                     </thead>
                     <tbody id="sub-compare-body"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <!-- Premium Benefits -->
+        <section class="sub-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Premium Benefits</h2>
+            </div>
+            <div class="premium-benefits-grid" id="premium-benefits-grid">
+                <!-- Injected via JS -->
             </div>
         </section>
 

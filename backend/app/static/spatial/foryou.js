@@ -1,7 +1,7 @@
 /* ==========================================================================
-   VISIONCINE — FOR YOU PAGE CONTROLLER  (foryou.js)
+   VISIONCINE — FOR YOU PAGE CONTROLLER (foryou.js)
    All logic for the personalised recommendation view (#view-for-you).
-   Loaded after api.js and app.js.
+   Includes AI Movie Concierge Questionnaire.
    ========================================================================== */
 
 'use strict';
@@ -29,21 +29,113 @@ const FY = {
     stats: null,
     heroIndex: 0,
     heroTimer: null,
+    questionnaire: {
+        currentStep: 1,
+        totalSteps: 8,
+        answers: {
+            mood: '',
+            genres: [],
+            theme: '',
+            companions: '',
+            language: '',
+            length: '',
+            release: '',
+            ending: ''
+        }
+    }
 };
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
-function fyPosterUrl(path, size = 'w342') {
-    return path ? `https://image.tmdb.org/t/p/${size}${path}` : null;
-}
-function fyBackdropUrl(path) {
-    return path ? `https://image.tmdb.org/t/p/original${path}` : null;
-}
+function fyPosterUrl(path, size = 'w342') { return path ? `https://image.tmdb.org/t/p/${size}${path}` : null; }
+function fyBackdropUrl(path) { return path ? `https://image.tmdb.org/t/p/original${path}` : null; }
 function fyYear(date) { return (date || '').substring(0, 4) || '—'; }
 function fyRating(v) { return v ? parseFloat(v).toFixed(1) : '—'; }
 
 /* ─── Skeleton helpers ────────────────────────────────────────────────────── */
 function skeletonCards(n = 6, cls = 'fy-card') {
     return Array.from({ length: n }, () => `<div class="${cls} fy-skeleton"></div>`).join('');
+}
+
+/* ─── Questionnaire Logic ─────────────────────────────────────────────────── */
+const Q_DATA = {
+    mood: ['Happy', 'Relaxed', 'Excited', 'Romantic', 'Emotional', 'Curious', 'Adventurous', 'Scared', 'Inspired', 'Nostalgic', 'Stressed', 'Surprise Me'],
+    genres: Object.values(GENRE_NAMES),
+    theme: ['Friendship', 'Love', 'Revenge', 'Space', 'Time Travel', 'Artificial Intelligence', 'Superheroes', 'Magic', 'Psychological', 'Detective', 'Mafia', 'Survival', 'Sports', 'Coming of Age', 'True Story', 'Post Apocalyptic', 'Crime Investigation', 'Military', 'Political', 'Mythology'],
+    companions: ['Myself', 'Friends', 'Partner', 'Family', 'Kids'],
+    language: ['English', 'Tamil', 'Hindi', 'Korean', 'Japanese', 'French', 'Spanish', 'Any Language'],
+    length: ['Under 90 Minutes', '90–120 Minutes', 'More Than 2 Hours', 'Any Length'],
+    release: ['Latest', 'Classic', 'Mix Both'],
+    ending: ['Happy', 'Emotional', 'Unexpected Twist', 'Dark', 'Open Ending', 'No Preference']
+};
+
+function renderQuestionnaireCard(label, type) {
+    // Elegant SVG icon placeholder
+    const icon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>`;
+    return `<div class="selection-card" data-type="${type}" data-val="${label}">
+        <div class="selection-icon">${icon}</div>
+        <div class="selection-label">${label}</div>
+    </div>`;
+}
+
+function initQuestionnaire() {
+    FY.questionnaire.currentStep = 1;
+    FY.questionnaire.answers = { mood: '', genres: [], theme: '', companions: '', language: '', length: '', release: '', ending: '' };
+    
+    document.getElementById('fy-grid-mood').innerHTML = Q_DATA.mood.map(v => renderQuestionnaireCard(v, 'mood')).join('');
+    document.getElementById('fy-grid-genres').innerHTML = Q_DATA.genres.map(v => renderQuestionnaireCard(v, 'genres')).join('');
+    document.getElementById('fy-grid-theme').innerHTML = Q_DATA.theme.map(v => renderQuestionnaireCard(v, 'theme')).join('');
+    document.getElementById('fy-grid-companions').innerHTML = Q_DATA.companions.map(v => renderQuestionnaireCard(v, 'companions')).join('');
+    document.getElementById('fy-grid-language').innerHTML = Q_DATA.language.map(v => renderQuestionnaireCard(v, 'language')).join('');
+    document.getElementById('fy-grid-length').innerHTML = Q_DATA.length.map(v => renderQuestionnaireCard(v, 'length')).join('');
+    document.getElementById('fy-grid-release').innerHTML = Q_DATA.release.map(v => renderQuestionnaireCard(v, 'release')).join('');
+    document.getElementById('fy-grid-ending').innerHTML = Q_DATA.ending.map(v => renderQuestionnaireCard(v, 'ending')).join('');
+
+    document.querySelectorAll('.selection-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const type = card.dataset.type;
+            const val = card.dataset.val;
+            
+            if (type === 'genres') {
+                card.classList.toggle('selected');
+                const idx = FY.questionnaire.answers.genres.indexOf(val);
+                if (idx > -1) FY.questionnaire.answers.genres.splice(idx, 1);
+                else FY.questionnaire.answers.genres.push(val);
+            } else {
+                document.querySelectorAll(`.selection-card[data-type="${type}"]`).forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                FY.questionnaire.answers[type] = val;
+                setTimeout(nextQuestionnaireStep, 300);
+            }
+        });
+    });
+
+    updateQuestionnaireUI();
+}
+
+// Attach to window so onclick="nextQuestionnaireStep()" works from HTML
+window.nextQuestionnaireStep = async function() {
+    if (FY.questionnaire.currentStep < FY.questionnaire.totalSteps) {
+        FY.questionnaire.currentStep++;
+        updateQuestionnaireUI();
+    } else {
+        document.getElementById('fy-q-progress-bar').style.width = `100%`;
+        await completeQuestionnaire();
+    }
+}
+
+function updateQuestionnaireUI() {
+    for (let i = 1; i <= FY.questionnaire.totalSteps; i++) {
+        const step = document.getElementById(`fy-step-${i}`);
+        if (step) step.classList.toggle('hidden', i !== FY.questionnaire.currentStep);
+    }
+    const pct = ((FY.questionnaire.currentStep - 1) / FY.questionnaire.totalSteps) * 100;
+    document.getElementById('fy-q-progress-bar').style.width = `${pct}%`;
+}
+
+async function completeQuestionnaire() {
+    document.getElementById('fy-questionnaire').classList.add('hidden');
+    document.getElementById('fy-results').classList.remove('hidden');
+    await loadForYouResults();
 }
 
 /* ─── Render a single recommendation card ────────────────────────────────── */
@@ -57,6 +149,11 @@ function renderRecCard(m) {
         .map(g => `<span class="fy-genre-chip">${typeof g === 'string' ? g : (GENRE_NAMES[g] || '')}</span>`)
         .join('');
     const matchClass = match >= 85 ? 'match-high' : match >= 70 ? 'match-med' : 'match-low';
+    
+    let reasonHtml = '';
+    if (m.recommendation_reason) {
+        reasonHtml = `<div class="fy-rec-reason"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ${m.recommendation_reason}</div>`;
+    }
 
     return `
     <div class="fy-card" data-id="${m.id || m.tmdb_id}" data-title="${(m.title||'').replace(/"/g,'&quot;')}">
@@ -71,9 +168,13 @@ function renderRecCard(m) {
             <div class="fy-card-meta">
                 <span class="fy-year">${year}</span>
                 <span class="fy-dot">·</span>
-                <span class="fy-imdb">★ ${rating}</span>
+                <span class="fy-imdb">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-right:2px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    ${rating}
+                </span>
             </div>
             <div class="fy-genres">${genres}</div>
+            ${reasonHtml}
             <div class="fy-card-actions">
                 <button class="btn-primary fy-action-btn fy-trailer-btn"
                     data-id="${m.id || m.tmdb_id}">
@@ -87,7 +188,6 @@ function renderRecCard(m) {
     </div>`;
 }
 
-/* ─── Render a compact horizontal card ───────────────────────────────────── */
 function renderHCard(m) {
     const poster = fyPosterUrl(m.poster_path, 'w185');
     return `
@@ -102,10 +202,9 @@ function renderHCard(m) {
     </div>`;
 }
 
-/* ─── Render continue-watching card with progress bar ────────────────────── */
 function renderContinueCard(m, idx) {
     const poster   = fyPosterUrl(m.poster_path, 'w342');
-    const progress = 20 + ((idx * 23) % 75); // deterministic fake progress
+    const progress = 20 + ((idx * 23) % 75); 
     return `
     <div class="fy-continue-card" data-id="${m.id || m.tmdb_id}">
         <div class="fy-continue-thumb">
@@ -128,24 +227,24 @@ function renderContinueCard(m, idx) {
     </div>`;
 }
 
-/* ─── Render genre card ────────────────────────────────────────────────────── */
+/* ─── Render genre card (No Emojis) ────────────────────────────────────────── */
 function renderGenreCard(gid, score) {
     const name  = GENRE_NAMES[gid] || 'Genre';
     const color = GENRE_COLORS[gid] || '#6366f1';
-    const emojis = { 28:'🔥',12:'🗺️',16:'✨',35:'😂',80:'🔫',18:'🎭',878:'🚀',53:'😱',10749:'❤️',27:'👻',14:'🧙',10402:'🎵' };
-    const icon  = emojis[gid] || '🎬';
+    const iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+    
     return `
     <div class="fy-genre-card" style="--gc:${color}" data-genre-id="${gid}">
-        <span class="fy-genre-icon">${icon}</span>
+        <span class="fy-genre-icon">${iconSvg}</span>
         <span class="fy-genre-name">${name}</span>
     </div>`;
 }
 
-/* ─── Render stat card ────────────────────────────────────────────────────── */
-function renderStatCard(icon, label, value, accent = '#ffffff') {
+/* ─── Render stat card (No Emojis) ────────────────────────────────────────── */
+function renderStatCard(iconSvg, label, value, accent = '#ffffff') {
     return `
     <div class="fy-stat-card">
-        <div class="fy-stat-icon" style="color:${accent}">${icon}</div>
+        <div class="fy-stat-icon" style="color:${accent}">${iconSvg}</div>
         <div class="fy-stat-value">${value}</div>
         <div class="fy-stat-label">${label}</div>
     </div>`;
@@ -194,16 +293,13 @@ function setFyHeroSlide(movies, idx) {
     }
 }
 
-/* ─── Section renderers ────────────────────────────────────────────────────── */
 function renderSection(gridId, cards) {
     const el = document.getElementById(gridId);
     if (!el) return;
     el.innerHTML = cards;
-    // attach click handlers for fy-card and fy-hcard
     el.querySelectorAll('[data-id]').forEach(card => {
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.fy-trailer-btn')) return; // handled separately
-            if (e.target.closest('.fy-action-btn')) return;
+            if (e.target.closest('.fy-trailer-btn') || e.target.closest('.fy-action-btn')) return;
             const id = parseInt(card.dataset.id, 10);
             if (id) openDetailsOverlay(id);
         });
@@ -228,13 +324,12 @@ function renderSection(gridId, cards) {
     });
 }
 
-/* ─── Main load function — called when switching to for-you view ─────────── */
-async function loadForYouPage() {
+/* ─── Fetch and Render Results ───────────────────────────────────────────── */
+async function loadForYouResults() {
     const username = STATE.user || API.getCurrentUser() || 'Cinephile';
     const greeting = document.getElementById('fy-greeting');
     if (greeting) greeting.textContent = `Welcome Back, ${username}`;
 
-    // Show skeletons immediately
     const grids = ['fy-rec-grid','fy-because-grid','fy-continue-grid',
                    'fy-trending-grid','fy-picks-grid','fy-gems-grid',
                    'fy-similar-grid','fy-history-grid'];
@@ -243,48 +338,34 @@ async function loadForYouPage() {
         if (el) el.innerHTML = skeletonCards(6);
     });
 
-    // Parallel data fetch
     const [recData, trendData, histData, statsData] = await Promise.allSettled([
-        API.getRecommendations(),
+        API.submitMoodQuestionnaire(FY.questionnaire.answers),
         API.getTrending(),
         API.getHistory(),
         API.getStats(),
     ]);
 
-    // ── Recommendations
     const recs = recData.status === 'fulfilled' ? (recData.value.results || []) : [];
     FY.recommendations = recs;
-
-    const hasRatings = recData.status === 'fulfilled' ? recData.value.has_ratings : false;
-    const noRatingsMsg = document.getElementById('fy-no-ratings-msg');
-    if (noRatingsMsg) noRatingsMsg.classList.toggle('hidden', hasRatings || recs.length === 0);
 
     if (recs.length > 0) {
         renderFyHero(recs);
         renderSection('fy-rec-grid', recs.slice(0, 12).map(renderRecCard).join(''));
     } else {
-        renderSection('fy-rec-grid', '<p class="fy-empty-msg">No recommendations yet. Rate some movies to get started!</p>');
+        renderSection('fy-rec-grid', '<p class="fy-empty-msg">No recommendations found for this mood.</p>');
     }
 
-    // ── Trending
     const trending = trendData.status === 'fulfilled' ? (trendData.value.results || []) : [];
     FY.trending = trending;
     renderSection('fy-trending-grid', trending.slice(0, 12).map(renderRecCard).join(''));
 
-    // ── History / Recently Viewed
     const history = histData.status === 'fulfilled' ? (histData.value.results || []) : [];
     FY.history = history;
 
     if (history.length > 0) {
         renderSection('fy-history-grid', history.slice(0, 8).map(renderHCard).join(''));
         renderSection('fy-continue-grid', history.slice(0, 6).map((m, i) => renderContinueCard(m, i)).join(''));
-    } else {
-        renderSection('fy-history-grid', '<p class="fy-empty-msg">No viewing history yet. Start watching!</p>');
-        renderSection('fy-continue-grid', '<p class="fy-empty-msg">Nothing to continue yet.</p>');
-    }
-
-    // ── Because You Watched — picks from history[0] recommendations
-    if (history.length > 0) {
+        
         const baseId = history[0].tmdb_id || history[0].id;
         const baseTitle = history[0].title || '';
         const becauseLabel = document.getElementById('fy-because-label');
@@ -300,19 +381,17 @@ async function loadForYouPage() {
         } catch (_) {
             renderSection('fy-because-grid', trending.slice(6, 12).map(renderRecCard).join(''));
         }
-    } else if (recs.length > 0) {
+    } else {
+        renderSection('fy-history-grid', '<p class="fy-empty-msg">No viewing history yet. Start watching!</p>');
+        renderSection('fy-continue-grid', '<p class="fy-empty-msg">Nothing to continue yet.</p>');
         const becauseLabel = document.getElementById('fy-because-label');
         if (becauseLabel) becauseLabel.textContent = 'Your Top Pick';
         renderSection('fy-because-grid', recs.slice(4, 10).map(renderRecCard).join(''));
-    } else {
-        renderSection('fy-because-grid', trending.slice(4, 10).map(renderRecCard).join(''));
     }
 
-    // ── Top Picks — second half of recs or trending fallback
     const picks = recs.length >= 12 ? recs.slice(12, 20) : trending.slice(0, 8);
     renderSection('fy-picks-grid', picks.map(renderRecCard).join(''));
 
-    // ── Hidden Gems — from top_rated, filter high vote_average
     try {
         const gemData = await API.fetchTMDB('/movie/top_rated');
         const gems = (gemData.results || [])
@@ -323,14 +402,11 @@ async function loadForYouPage() {
                 match_score: Math.floor(70 + Math.random() * 29),
                 genre_names: (m.genre_ids || []).map(g => GENRE_NAMES[g]).filter(Boolean),
             }));
-        renderSection('fy-gems-grid', gems.length > 0
-            ? gems.map(renderRecCard).join('')
-            : trending.slice(8, 14).map(renderRecCard).join(''));
+        renderSection('fy-gems-grid', gems.length > 0 ? gems.map(renderRecCard).join('') : trending.slice(8, 14).map(renderRecCard).join(''));
     } catch (_) {
         renderSection('fy-gems-grid', trending.slice(8, 14).map(renderRecCard).join(''));
     }
 
-    // ── Similar Users Loved — use /movie/popular as proxy for collaborative
     try {
         const popData = await API.fetchTMDB('/movie/popular?page=2');
         const similar = (popData.results || []).slice(0, 12).map(m => ({
@@ -343,12 +419,9 @@ async function loadForYouPage() {
         renderSection('fy-similar-grid', recs.slice(8, 14).map(renderRecCard).join(''));
     }
 
-    // ── Stats
     const stats = statsData.status === 'fulfilled' ? statsData.value : null;
     FY.stats = stats;
     renderStats(stats);
-
-    // ── Favourite Genres
     renderGenres(stats);
 }
 
@@ -359,13 +432,21 @@ function renderStats(stats) {
         grid.innerHTML = '<p class="fy-empty-msg">Log in to see your stats.</p>';
         return;
     }
+    
+    const i1 = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>`;
+    const i2 = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+    const i3 = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+    const i4 = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="6.5"/></svg>`;
+    const i5 = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+    const i6 = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
     grid.innerHTML = [
-        renderStatCard('🎬', 'Movies Rated',    stats.movies_rated || 0,    '#a78bfa'),
-        renderStatCard('📚', 'Movies Saved',    stats.movies_saved || 0,    '#34d399'),
-        renderStatCard('⭐', 'Avg Rating',      stats.average_rating || '—', '#fbbf24'),
-        renderStatCard('🎭', 'Favourite Genre', stats.favorite_genre || '—', '#f472b6'),
-        renderStatCard('⏱️', 'Hours Watched',   stats.hours_watched || 0,   '#60a5fa'),
-        renderStatCard('👁️', 'Titles Viewed',   stats.history_count || 0,   '#f97316'),
+        renderStatCard(i1, 'Movies Rated',    stats.movies_rated || 0,    '#a78bfa'),
+        renderStatCard(i2, 'Movies Saved',    stats.movies_saved || 0,    '#34d399'),
+        renderStatCard(i3, 'Avg Rating',      stats.average_rating || '—', '#fbbf24'),
+        renderStatCard(i4, 'Favourite Genre', stats.favorite_genre || '—', '#f472b6'),
+        renderStatCard(i5, 'Hours Watched',   stats.hours_watched || 0,   '#60a5fa'),
+        renderStatCard(i6, 'Titles Viewed',   stats.history_count || 0,   '#f97316'),
     ].join('');
 }
 
@@ -373,7 +454,6 @@ function renderGenres(stats) {
     const grid = document.getElementById('fy-genre-grid');
     if (!grid) return;
     if (!stats || !stats.top_genres || stats.top_genres.length === 0) {
-        // Show popular genre defaults
         const defaults = [28, 878, 18, 53, 80];
         grid.innerHTML = defaults.map(id => renderGenreCard(id, 1)).join('');
         return;
@@ -381,17 +461,27 @@ function renderGenres(stats) {
     grid.innerHTML = stats.top_genres.map(g => renderGenreCard(g.id, g.score)).join('');
 }
 
-/* ─── Nav wiring (called from app.js after login) ───────────────────────── */
+/* ─── Nav wiring ───────────────────────── */
 function initForYouNav() {
     const btn = document.getElementById('nav-foryou-btn');
     if (btn) {
         btn.addEventListener('click', () => {
             showView(document.getElementById('view-for-you'));
-            loadForYouPage();
+            document.getElementById('fy-results').classList.add('hidden');
+            document.getElementById('fy-questionnaire').classList.remove('hidden');
+            initQuestionnaire();
         });
     }
 
-    // Hero buttons
+    const restartBtn = document.getElementById('fy-restart-btn');
+    if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+            document.getElementById('fy-results').classList.add('hidden');
+            document.getElementById('fy-questionnaire').classList.remove('hidden');
+            initQuestionnaire();
+        });
+    }
+
     const heroTrailer = document.getElementById('fy-hero-trailer-btn');
     if (heroTrailer) {
         heroTrailer.addEventListener('click', async () => {
@@ -414,11 +504,35 @@ function initForYouNav() {
         });
     }
 
-    // Hero dots
     document.querySelectorAll('.fy-hero-dot').forEach((dot, i) => {
         dot.addEventListener('click', () => {
             FY.heroIndex = i;
             setFyHeroSlide(FY.recommendations.length > 0 ? FY.recommendations : FY.trending, i);
+        });
+    });
+
+    const aiFab = document.getElementById('ai-fab');
+    const aiPanel = document.getElementById('ai-panel');
+    const aiClose = document.getElementById('ai-panel-close');
+
+    if (aiFab) {
+        aiFab.addEventListener('click', () => {
+            aiPanel.classList.toggle('hidden');
+        });
+    }
+    if (aiClose) {
+        aiClose.addEventListener('click', () => {
+            aiPanel.classList.add('hidden');
+        });
+    }
+
+    document.querySelectorAll('.ai-suggestion-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const msg = btn.textContent;
+            const body = document.querySelector('.ai-panel-body');
+            body.innerHTML += `<p class="ai-msg ai-msg-user">${msg}</p>`;
+            body.innerHTML += `<p class="ai-msg ai-msg-bot">Let me analyse your preferences to find the perfect match for "${msg}"... Please check the For You section for updated results.</p>`;
+            body.scrollTop = body.scrollHeight;
         });
     });
 }

@@ -92,9 +92,13 @@ const API = {
         return this.request('/users/profile', 'GET');
     },
 
-    // ─── For You & Subscription Methods ───────────────────────────────────
+    // ─── For You & Premium Methods ───────────────────────────────────
     async getRecommendations() {
         return this.request('/api/recommendations', 'GET');
+    },
+
+    async submitMoodQuestionnaire(data) {
+        return this.request('/api/mood', 'POST', data);
     },
 
     async getTrending() {
@@ -109,7 +113,11 @@ const API = {
         return this.request('/api/stats', 'GET');
     },
 
-    async getSubscription() {
-        return this.request('/api/subscription', 'GET');
+    async getPremiumInfo() {
+        return this.request('/api/premium', 'GET');
+    },
+
+    async getPremiumCollections() {
+        return this.request('/api/exclusive', 'GET');
     },
 };

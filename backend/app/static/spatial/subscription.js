@@ -1,6 +1,6 @@
 /* ==========================================================================
-   VISIONCINE — SUBSCRIPTION PAGE CONTROLLER  (subscription.js)
-   All logic for the pricing / subscription view (#view-subscription).
+   VISIONCINE — PREMIUM PAGE CONTROLLER (subscription.js)
+   All logic for the pricing / premium view (#view-subscription).
    Loaded after api.js and app.js.
    ========================================================================== */
 
@@ -15,14 +15,11 @@ const PLANS = [
         period: '/month',
         badge: null,
         features: [
-            { label: 'Resolution',          value: 'HD' },
+            { label: 'Resolution',          value: 'HD Streaming' },
             { label: 'Devices',             value: '1 Device' },
-            { label: 'Ads',                 value: 'Included', negative: true },
-            { label: 'Downloads',           value: '—', negative: true },
-            { label: 'AI Recommendations',  value: 'Basic' },
-            { label: 'Continue Watching',   value: '—', negative: true },
-            { label: 'Family Sharing',      value: '—', negative: true },
-            { label: 'Priority Support',    value: '—', negative: true },
+            { label: 'Ads',                 value: 'Advertisements', negative: true },
+            { label: 'Downloads',           value: 'Downloads', positive: true },
+            { label: 'Recommendations',     value: 'Basic Recommendations' },
         ],
         btnLabel: 'Subscribe',
         btnClass: 'btn-ghost',
@@ -38,11 +35,9 @@ const PLANS = [
             { label: 'Resolution',          value: 'Full HD' },
             { label: 'Devices',             value: '3 Devices' },
             { label: 'Ads',                 value: 'No Ads', positive: true },
-            { label: 'Downloads',           value: '✓', positive: true },
-            { label: 'AI Recommendations',  value: 'Advanced', positive: true },
-            { label: 'Continue Watching',   value: 'Synced', positive: true },
-            { label: 'Family Sharing',      value: '—', negative: true },
-            { label: 'Priority Support',    value: '—', negative: true },
+            { label: 'Downloads',           value: 'Offline Downloads', positive: true },
+            { label: 'Recommendations',     value: 'AI Recommendations', positive: true },
+            { label: 'Continue Watching',   value: 'Continue Watching Sync', positive: true },
         ],
         btnLabel: 'Upgrade',
         btnClass: 'btn-primary',
@@ -55,14 +50,13 @@ const PLANS = [
         period: '/month',
         badge: 'Best Value',
         features: [
-            { label: 'Resolution',          value: '4K + Dolby Atmos' },
-            { label: 'Devices',             value: 'Unlimited' },
-            { label: 'Ads',                 value: 'No Ads', positive: true },
-            { label: 'Downloads',           value: 'Offline Downloads', positive: true },
-            { label: 'AI Recommendations',  value: 'Full AI', positive: true },
-            { label: 'Continue Watching',   value: 'Synced', positive: true },
-            { label: 'Family Sharing',      value: '✓', positive: true },
-            { label: 'Priority Support',    value: '✓', positive: true },
+            { label: 'Resolution',          value: '4K HDR' },
+            { label: 'Audio',               value: 'Dolby Vision & Atmos', positive: true },
+            { label: 'Devices',             value: 'Unlimited Devices', positive: true },
+            { label: 'Sharing',             value: 'Family Sharing', positive: true },
+            { label: 'Concierge',           value: 'AI Movie Concierge', positive: true },
+            { label: 'Content',             value: 'Exclusive Collections', positive: true },
+            { label: 'Support',             value: 'Priority Support', positive: true },
         ],
         btnLabel: 'Go Ultimate',
         btnClass: 'btn-primary sub-ultimate-btn',
@@ -70,28 +64,27 @@ const PLANS = [
     },
 ];
 
-/* ─── Comparison table rows ──────────────────────────────────────────────── */
-const COMPARE_FEATURES = [
-    { label: 'Resolution',         key: 'Resolution' },
-    { label: 'Devices',            key: 'Devices' },
-    { label: 'Downloads',          key: 'Downloads' },
-    { label: 'Ads',                key: 'Ads' },
-    { label: 'AI Recommendations', key: 'AI Recommendations' },
-    { label: 'Continue Watching',  key: 'Continue Watching' },
-    { label: 'Family Sharing',     key: 'Family Sharing' },
-    { label: 'Priority Support',   key: 'Priority Support' },
+/* ─── Payment methods (SVGs) ──────────────────────────────────────────────── */
+const PAYMENT_METHODS = [
+    { name: 'UPI',        svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', color: '#f97316' },
+    { name: 'Google Pay', svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>', color: '#34d399' },
+    { name: 'PhonePe',    svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>', color: '#8b5cf6' },
+    { name: 'Paytm',      svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>', color: '#06b6d4' },
+    { name: 'Visa',       svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>', color: '#1a56db' },
+    { name: 'MasterCard', svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="12" r="6"/><circle cx="16" cy="12" r="6"/></svg>', color: '#ef4444' },
+    { name: 'RuPay',      svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>', color: '#10b981' },
+    { name: 'PayPal',     svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 7.5A4.5 4.5 0 0 0 13 3H7.4a.5.5 0 0 0-.5.5v16.1a.5.5 0 0 0 .5.5H11v-4h1.5a5.5 5.5 0 0 0 5.5-5.5v-.5a4.5 4.5 0 0 0-4.5-4.5z"/></svg>', color: '#3b82f6' },
+    { name: 'Stripe',     svg: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12c-2 0-3-1-3-2s1-2 3-2 3 1 3 2c0 2-2 3-3 4zm0 0c2 0 3 1 3 2s-1 2-3 2-3-1-3-2c0-2 2-3 3-4z"/><line x1="12" y1="2" x2="12" y2="22"/></svg>', color: '#6366f1' },
 ];
 
-/* ─── Payment methods ─────────────────────────────────────────────────────── */
-const PAYMENT_METHODS = [
-    { name: 'UPI',        icon: '₹',   color: '#f97316' },
-    { name: 'Google Pay', icon: 'G',   color: '#34d399' },
-    { name: 'PhonePe',   icon: 'P',   color: '#8b5cf6' },
-    { name: 'Paytm',     icon: 'PT',  color: '#06b6d4' },
-    { name: 'Visa',      icon: 'V',   color: '#1a56db' },
-    { name: 'Mastercard',icon: 'MC',  color: '#ef4444' },
-    { name: 'RuPay',     icon: 'R',   color: '#10b981' },
-    { name: 'Stripe',    icon: 'S',   color: '#6366f1' },
+/* ─── Movie Quality Badges ────────────────────────────────────────────────── */
+const QUALITY_BADGES = [
+    '4K', 'HDR10+', 'Dolby Vision', 'Dolby Atmos', 'IMAX Enhanced', 'Blu-ray', 'Director\'s Cut', 'Premium Exclusive'
+];
+
+/* ─── Premium Benefits ────────────────────────────────────────────────────── */
+const PREMIUM_BENEFITS = [
+    'Unlimited Streaming', 'Highest Video Quality', 'AI Movie Concierge', 'Personalized Recommendations', 'Offline Downloads', 'Cloud Sync', 'Cross Device Resume', 'Family Sharing', 'Priority Support', 'Early Access'
 ];
 
 /* ─── State ──────────────────────────────────────────────────────────────── */
@@ -102,7 +95,7 @@ const SUB = {
     emailNotifs: true,
 };
 
-/* ─── Render pricing cards ────────────────────────────────────────────────── */
+/* ─── Render ─────────────────────────────────────────────────────────────── */
 function renderPricingCards() {
     const container = document.getElementById('sub-pricing-grid');
     if (!container) return;
@@ -122,7 +115,7 @@ function renderPricingCards() {
         <ul class="sub-feature-list">
             ${plan.features.map(f => `
             <li class="sub-feature-item ${f.positive ? 'feat-yes' : ''} ${f.negative ? 'feat-no' : ''}">
-                <span class="feat-icon">${f.positive ? '✓' : f.negative ? '—' : '◉'}</span>
+                <span class="feat-icon">${f.positive ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' : f.negative ? '—' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>'}</span>
                 <span class="feat-label">${f.label}</span>
                 <span class="feat-val">${f.value}</span>
             </li>`).join('')}
@@ -132,7 +125,6 @@ function renderPricingCards() {
         </button>
     </div>`).join('');
 
-    // Attach plan selection
     container.querySelectorAll('.sub-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.sub-plan-btn')) return;
@@ -149,7 +141,6 @@ function selectPlan(planId) {
     document.querySelectorAll('.sub-card').forEach(c => {
         c.classList.toggle('sub-card-selected', c.dataset.plan === planId);
     });
-    // Update the payment section title
     const plan = PLANS.find(p => p.id === planId);
     const payTitle = document.getElementById('sub-pay-plan-name');
     if (payTitle && plan) payTitle.textContent = `${plan.name} — ${plan.price}/month`;
@@ -159,43 +150,17 @@ function handleSubscribe(planId) {
     const plan = PLANS.find(p => p.id === planId);
     if (!plan) return;
     selectPlan(planId);
-    // Scroll to payment
     const paySection = document.getElementById('sub-payment-section');
     if (paySection) paySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     showToast(`${plan.name} plan selected. Complete payment below.`, 'info');
 }
 
-/* ─── Render comparison table ─────────────────────────────────────────────── */
-function renderCompareTable() {
-    const tbody = document.getElementById('sub-compare-body');
-    if (!tbody) return;
-
-    // Build a feature → plan map
-    const planMap = {};
-    PLANS.forEach(plan => {
-        planMap[plan.id] = {};
-        plan.features.forEach(f => { planMap[plan.id][f.key] = f; });
-    });
-
-    tbody.innerHTML = COMPARE_FEATURES.map(row => `
-    <tr class="compare-row">
-        <td class="compare-feat-label">${row.label}</td>
-        ${PLANS.map(plan => {
-            const feat = planMap[plan.id][row.key];
-            if (!feat) return '<td class="compare-cell">—</td>';
-            const cls = feat.positive ? 'compare-yes' : feat.negative ? 'compare-no' : '';
-            return `<td class="compare-cell ${cls}">${feat.value}</td>`;
-        }).join('')}
-    </tr>`).join('');
-}
-
-/* ─── Render payment methods ─────────────────────────────────────────────── */
 function renderPaymentMethods() {
     const grid = document.getElementById('sub-payment-methods');
     if (!grid) return;
     grid.innerHTML = PAYMENT_METHODS.map(pm => `
     <div class="sub-payment-card" data-method="${pm.name}">
-        <div class="sub-payment-icon" style="background:${pm.color}22;color:${pm.color}">${pm.icon}</div>
+        <div class="sub-payment-icon" style="background:${pm.color}22;color:${pm.color}">${pm.svg}</div>
         <span class="sub-payment-name">${pm.name}</span>
     </div>`).join('');
 
@@ -207,13 +172,60 @@ function renderPaymentMethods() {
     });
 }
 
-/* ─── Render current subscription status ─────────────────────────────────── */
+function renderQualityBadges() {
+    const wrap = document.getElementById('quality-badges-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = QUALITY_BADGES.map(b => `<span class="quality-badge">${b}</span>`).join('');
+}
+
+function renderPremiumBenefits() {
+    const grid = document.getElementById('premium-benefits-grid');
+    if (!grid) return;
+    grid.innerHTML = PREMIUM_BENEFITS.map(b => `
+    <div class="premium-benefit-item">
+        <svg class="benefit-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>${b}</span>
+    </div>`).join('');
+}
+
+async function renderPremiumCollections() {
+    const grid = document.getElementById('premium-exclusive-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = `<p class="fy-empty-msg">Loading collections...</p>`;
+    
+    try {
+        const data = await API.getPremiumCollections();
+        if (data.collections && data.collections.length > 0) {
+            grid.innerHTML = data.collections.map(c => `
+                <div class="premium-collection-row">
+                    <h3 class="collection-title">${c.collection.title} <span class="collection-badge">${c.collection.badge}</span></h3>
+                    <div class="collection-movies">
+                        ${c.movies.map(m => `
+                            <div class="fy-card" data-id="${m.id}" data-title="${(m.title||'').replace(/"/g,'&quot;')}">
+                                <div class="fy-card-poster-wrap">
+                                    <img class="fy-card-poster" src="${m.poster_url}" alt="${m.title||''}" loading="lazy">
+                                    <div class="premium-corner-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            grid.innerHTML = `<p class="fy-empty-msg">No collections found.</p>`;
+        }
+    } catch (_) {
+        grid.innerHTML = `<p class="fy-empty-msg">Failed to load collections.</p>`;
+    }
+}
+
 async function renderCurrentPlan() {
     const section = document.getElementById('sub-current-plan');
     if (!section) return;
 
     try {
-        const data = await API.getSubscription();
+        const data = await API.getPremiumInfo();
         SUB.currentPlan = data;
         const statusColor = data.status === 'Active' ? '#34d399' : '#f87171';
 
@@ -242,7 +254,7 @@ async function renderCurrentPlan() {
                 ${data.features.map(f => `<span class="fy-genre-chip">${f}</span>`).join('')}
             </div>
             <div class="sub-current-actions">
-                <button class="btn-primary" onclick="handleSubscribe('premium')">Upgrade to Premium</button>
+                <button class="btn-primary" onclick="handleSubscribe('premium')">Upgrade Plan</button>
                 <button class="btn-ghost sub-cancel-btn" id="sub-cancel-btn">Cancel Subscription</button>
             </div>
         </div>`;
@@ -255,7 +267,6 @@ async function renderCurrentPlan() {
     }
 }
 
-/* ─── Render settings panel ──────────────────────────────────────────────── */
 function renderSettings() {
     const section = document.getElementById('sub-settings-section');
     if (!section) return;
@@ -303,31 +314,36 @@ function renderSettings() {
     });
 }
 
-/* ─── Main load function ─────────────────────────────────────────────────── */
-function loadSubscriptionPage() {
-    renderPricingCards();
-    renderCompareTable();
-    renderPaymentMethods();
-    renderCurrentPlan();
-    renderSettings();
-
-    // Payment form submit
-    const payBtn = document.getElementById('sub-pay-btn');
-    if (payBtn) {
-        payBtn.addEventListener('click', () => {
-            const plan = PLANS.find(p => p.id === SUB.selectedPlan);
-            showToast(`Payment processing for ${plan?.name || 'selected plan'}… (demo mode)`, 'info');
-        });
-    }
+function renderPaymentForm() {
+    const form = document.getElementById('sub-payment-form');
+    if (!form) return;
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('sub-pay-btn');
+        btn.innerHTML = `<div class="btn-spinner" style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;"></div> Processing...`;
+        setTimeout(() => {
+            btn.innerHTML = 'Complete Secure Payment';
+            showToast('Subscription activated successfully! Welcome to Premium.', 'success');
+            renderCurrentPlan();
+        }, 1500);
+    });
 }
 
-/* ─── Nav wiring ─────────────────────────────────────────────────────────── */
+/* ─── Nav wiring (called from app.js) ────────────────────────────────────── */
 function initSubscriptionNav() {
     const btn = document.getElementById('nav-subscription-btn');
     if (btn) {
         btn.addEventListener('click', () => {
             showView(document.getElementById('view-subscription'));
-            loadSubscriptionPage();
+            renderPricingCards();
+            renderPremiumCollections();
+            renderQualityBadges();
+            renderPremiumBenefits();
+            renderPaymentMethods();
+            renderCurrentPlan();
+            renderSettings();
+            renderPaymentForm();
+            selectPlan('premium');
         });
     }
 }

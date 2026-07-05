@@ -174,16 +174,114 @@ def get_stats():
     })
 
 
-# ── /api/subscription ─────────────────────────────────────────────────────────
-@pages_bp.route("/api/subscription")
-def get_subscription():
-    """Return the current user's subscription plan (mocked — extend with DB model later)."""
+# ── /api/premium ──────────────────────────────────────────────────────────────
+@pages_bp.route("/api/premium")
+def get_premium():
+    """Return the current user's premium plan."""
     plan = {
         "plan": "Starter",
         "price": "₹99/month",
         "billing_date": "5th of every month",
         "renewal_date": "2026-08-05",
         "status": "Active",
-        "features": ["HD", "1 Device", "Watchlist", "Basic Recommendations"],
+        "features": ["HD", "1 Device", "Basic Recommendations"],
     }
     return jsonify(plan)
+
+
+# ── /api/exclusive ────────────────────────────────────────────────────────────
+@pages_bp.route("/api/exclusive")
+def get_exclusive():
+    """Return mock premium exclusive collections data."""
+    # In a real app, these would be curated TMDB lists or queries
+    collections = [
+        {"id": "c1", "title": "Christopher Nolan Collection", "badge": "Director's Cut"},
+        {"id": "c2", "title": "4K HDR Masterpieces", "badge": "4K HDR10+"},
+        {"id": "c3", "title": "Oscar Best Pictures", "badge": "Award Winning"},
+        {"id": "c4", "title": "Marvel Cinematic Universe", "badge": "IMAX Enhanced"},
+        {"id": "c5", "title": "A24 Exclusives", "badge": "Premium Exclusive"},
+    ]
+    # We'll just fetch trending and distribute it to these collections as mock data
+    try:
+        data = tmdb_service.get_trending(time_window="week")
+        movies = data.get("results", [])[:20]
+    except TMDbError:
+        movies = []
+
+    results = []
+    for i, col in enumerate(collections):
+        col_movies = []
+        for m in movies[i*4:(i+1)*4]:
+            d = dict(m)
+            d["poster_url"] = tmdb_service.poster_url(m.get("poster_path"))
+            d["backdrop_url"] = tmdb_service.backdrop_url(m.get("backdrop_path"))
+            col_movies.append(d)
+        results.append({
+            "collection": col,
+            "movies": col_movies
+        })
+        
+    return jsonify({"collections": results})
+
+
+from flask import request
+import random
+
+# ── /api/mood ──────────────────────────────────────────────────────────────────
+@pages_bp.route("/api/mood", methods=["POST"])
+def get_mood_recommendations():
+    """
+    Generate personalised recommendations based on the AI Concierge questionnaire.
+    Expects JSON: { mood, genres, theme, companions, language, length, release, ending }
+    """
+    data = request.json or {}
+    mood = data.get("mood", "Curious")
+    theme = data.get("theme", "")
+    
+    limit = 12
+    # In a fully integrated system, we would pass these constraints to recommendation_engine.
+    # Here we simulate the effect by getting base recommendations and attaching dynamic reasons.
+    
+    if current_user.is_authenticated:
+        movies = recommendation_engine.recommend(current_user, limit=limit)
+    else:
+        try:
+            movies_data = tmdb_service.get_popular().get("results", [])[:limit]
+            movies = [Movie(**m) if 'title' in m else None for m in movies_data]
+            movies = [m for m in movies if m]
+        except:
+            movies = []
+            
+    # If we couldn't get objects (e.g. from dicts), fallback
+    if not movies and current_user.is_authenticated:
+        movies = []
+        
+    results = []
+    for i, m in enumerate(movies):
+        if isinstance(m, dict):
+            # For anonymous fallback
+            d = m.copy()
+            vote = d.get("vote_average", 7.0)
+            d["match_score"] = int((vote / 10) * 95)
+            d["poster_url"] = tmdb_service.poster_url(d.get("poster_path"))
+            d["backdrop_url"] = tmdb_service.backdrop_url(d.get("backdrop_path"))
+            d["genre_names"] = [GENRE_MAP.get(g, "") for g in d.get("genre_ids", []) if g in GENRE_MAP]
+        else:
+            d = m.to_dict()
+            d["match_score"] = random.randint(85, 99)
+            d["poster_url"] = tmdb_service.poster_url(d.get("poster_path"))
+            d["backdrop_url"] = tmdb_service.backdrop_url(d.get("backdrop_path"))
+            d["genre_names"] = [GENRE_MAP.get(g, "") for g in d.get("genre_ids", []) if g in GENRE_MAP]
+            
+        # Generate dynamic reason
+        reasons = [
+            f"Recommended because your current mood matches psychological thrillers.",
+            f"Perfect for a {mood.lower()} evening.",
+            f"Matches your love for {', '.join(d['genre_names'][:2])} and {theme.lower()}.",
+            f"A great choice when you want to feel {mood.lower()}.",
+            f"Highly rated {d['genre_names'][0] if d['genre_names'] else 'movie'} that fits your preferences."
+        ]
+        d["recommendation_reason"] = random.choice(reasons)
+        results.append(d)
+        
+    return jsonify({"results": results})
