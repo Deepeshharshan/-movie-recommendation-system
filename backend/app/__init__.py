@@ -14,6 +14,32 @@ def create_app(config_name=None):
 
     os.makedirs(app.instance_path, exist_ok=True)
 
+    import logging
+    from logging.handlers import RotatingFileHandler
+
+    # Stream handler always works (captured by Docker/gunicorn stdout)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(
+        logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s")
+    )
+    stream_handler.setLevel(logging.INFO)
+    app.logger.addHandler(stream_handler)
+
+    # File handler — optional; skip if the instance dir is not writable (e.g. volume permission issue)
+    try:
+        log_path = os.path.join(app.instance_path, "flask.log")
+        file_handler = RotatingFileHandler(log_path, maxBytes=1024 * 1024, backupCount=5)
+        file_handler.setFormatter(
+            logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s")
+        )
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        app.logger.info("VisionCine backend: file logging active at %s", log_path)
+    except (PermissionError, OSError) as exc:
+        app.logger.warning("File logging unavailable (%s) — using stdout only.", exc)
+
+    app.logger.setLevel(logging.INFO)
+
     db.init_app(app)
     login_manager.init_app(app)
     CORS(app, supports_credentials=True)
@@ -36,13 +62,19 @@ def create_app(config_name=None):
 
     @app.errorhandler(404)
     def not_found(e):
-        return render_template("errors/404.html"), 404
+        # SPA: let the JS router handle 404 display
+        return render_template("index.html"), 404
 
     @app.errorhandler(500)
     def server_error(e):
-        return render_template("errors/500.html"), 500
+        app.logger.error("500 error: %s", e)
+        return render_template("index.html"), 500
 
-    with app.app_context():
-        db.create_all()
+    try:
+        with app.app_context():
+            db.create_all()
+    except Exception as e:
+        if "already exists" not in str(e):
+            raise e
 
     return app
