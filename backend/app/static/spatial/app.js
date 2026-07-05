@@ -135,7 +135,13 @@ function clearAuthAlert() {
 
 // ─── View Router ───────────────────────────────────────────────────────────────
 function showView(viewEl) {
-    [DOM.viewAuth, DOM.viewDashboard, DOM.viewProfile].forEach(v => {
+    const allViews = [
+        DOM.viewAuth, DOM.viewDashboard, DOM.viewProfile,
+        document.getElementById('view-for-you'),
+        document.getElementById('view-subscription'),
+    ].filter(Boolean);
+
+    allViews.forEach(v => {
         v.classList.remove('active');
         v.classList.add('hidden');
     });
@@ -737,6 +743,16 @@ function revealDashboard() {
     renderSkeletonGrid();
     showView(DOM.viewDashboard);
     loadMovies('all');
+
+    // Initialise new page nav buttons (defined in foryou.js / subscription.js)
+    if (typeof initForYouNav === 'function') initForYouNav();
+    if (typeof initSubscriptionNav === 'function') initSubscriptionNav();
+
+    // Back buttons on new views
+    const fyBackBtn  = document.getElementById('fy-back-btn');
+    const subBackBtn = document.getElementById('sub-back-btn');
+    if (fyBackBtn  && !fyBackBtn._bound)  { fyBackBtn._bound  = true; fyBackBtn.addEventListener('click',  () => showView(DOM.viewDashboard)); }
+    if (subBackBtn && !subBackBtn._bound) { subBackBtn._bound = true; subBackBtn.addEventListener('click', () => showView(DOM.viewDashboard)); }
 }
 
 // ─── Logout ────────────────────────────────────────────────────────────────────

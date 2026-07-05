@@ -86,6 +86,14 @@
         </div>
 
         <div class="nav-actions">
+            <button id="nav-foryou-btn" class="nav-text-btn" aria-label="For You">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                For You
+            </button>
+            <button id="nav-subscription-btn" class="nav-text-btn" aria-label="Subscription">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Premium
+            </button>
             <button id="nav-profile-btn" class="nav-icon-btn" aria-label="Profile">
                 <div id="nav-avatar" class="nav-avatar">U</div>
             </button>
@@ -253,6 +261,241 @@
 </div>
 
 <!-- ============================================================
+     VIEW 4: FOR YOU — PERSONALISED RECOMMENDATIONS
+     ============================================================ -->
+<div id="view-for-you" class="view view-for-you hidden">
+
+    <!-- HERO -->
+    <section class="fy-hero">
+        <div id="fy-hero-bg" class="fy-hero-bg"></div>
+        <div class="fy-hero-scrim"></div>
+        <div class="fy-hero-content">
+            <div class="fy-hero-eyebrow">Personalised For You</div>
+            <h1 id="fy-greeting" class="fy-hero-title">Welcome Back</h1>
+            <p class="fy-hero-sub">Based on your ratings, searches and watch history.</p>
+            <div id="fy-hero-match" class="fy-hero-match">— Match</div>
+            <h2 id="fy-hero-title" class="fy-hero-movie"></h2>
+            <p id="fy-hero-sub" class="fy-hero-desc"></p>
+            <div class="fy-hero-btns">
+                <button id="fy-hero-trailer-btn" class="btn-primary btn-hero" data-tmdb-id="" data-title="">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Watch Trailer
+                </button>
+                <button id="fy-hero-details-btn" class="btn-ghost btn-hero" data-tmdb-id="">Details</button>
+            </div>
+            <div class="fy-hero-dots">
+                <span class="fy-hero-dot active"></span>
+                <span class="fy-hero-dot"></span>
+                <span class="fy-hero-dot"></span>
+                <span class="fy-hero-dot"></span>
+                <span class="fy-hero-dot"></span>
+            </div>
+        </div>
+    </section>
+
+    <div class="fy-page-body">
+
+        <!-- Back button -->
+        <div class="fy-back-row">
+            <button class="btn-ghost fy-back-btn" id="fy-back-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+                Back to Dashboard
+            </button>
+        </div>
+
+        <!-- No ratings notice -->
+        <div id="fy-no-ratings-msg" class="fy-no-ratings hidden">
+            <div class="fy-no-ratings-icon">⭐</div>
+            <h3>Start Rating Movies</h3>
+            <p>Rate movies on the dashboard to receive personalised recommendations here.</p>
+        </div>
+
+        <!-- S1: Recommended For You -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Recommended For You</h2>
+                <span class="fy-section-sub">Tailored to your taste</span>
+            </div>
+            <div id="fy-rec-grid" class="fy-grid"></div>
+        </section>
+
+        <!-- S2: Because You Watched -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Because You Watched <span id="fy-because-label" class="fy-highlight"></span></h2>
+            </div>
+            <div id="fy-because-grid" class="fy-grid"></div>
+        </section>
+
+        <!-- S3: Continue Watching -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Continue Watching</h2>
+            </div>
+            <div id="fy-continue-grid" class="fy-continue-grid"></div>
+        </section>
+
+        <!-- S4: Trending Today -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Trending Today</h2>
+                <span class="fy-section-sub">Most viewed right now</span>
+            </div>
+            <div id="fy-trending-grid" class="fy-grid"></div>
+        </section>
+
+        <!-- S5: Top Picks -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Top Picks For You</h2>
+                <span class="fy-section-sub">Generated by our recommendation algorithm</span>
+            </div>
+            <div id="fy-picks-grid" class="fy-grid"></div>
+        </section>
+
+        <!-- S6: Hidden Gems -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Hidden Gems</h2>
+                <span class="fy-section-sub">IMDb &gt; 7.8 · Under the radar</span>
+            </div>
+            <div id="fy-gems-grid" class="fy-grid"></div>
+        </section>
+
+        <!-- S7: Favourite Genres -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Your Favourite Genres</h2>
+            </div>
+            <div id="fy-genre-grid" class="fy-genre-grid"></div>
+        </section>
+
+        <!-- S8: Similar Users Loved -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Similar Users Loved</h2>
+                <span class="fy-section-sub">Collaborative intelligence</span>
+            </div>
+            <div id="fy-similar-grid" class="fy-grid"></div>
+        </section>
+
+        <!-- S9: Recently Viewed -->
+        <section class="fy-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Recently Viewed</h2>
+            </div>
+            <div id="fy-history-grid" class="fy-hgrid"></div>
+        </section>
+
+        <!-- S10: Quick Statistics -->
+        <section class="fy-section fy-stats-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Quick Statistics</h2>
+            </div>
+            <div id="fy-stats-grid" class="fy-stats-grid"></div>
+        </section>
+
+    </div>
+</div>
+
+<!-- ============================================================
+     VIEW 5: SUBSCRIPTION / PRICING
+     ============================================================ -->
+<div id="view-subscription" class="view view-subscription hidden">
+
+    <!-- HERO -->
+    <section class="sub-hero">
+        <div class="sub-hero-bg"></div>
+        <div class="sub-hero-scrim"></div>
+        <div class="sub-hero-content">
+            <div class="sub-hero-eyebrow">VisionCine</div>
+            <h1 class="sub-hero-title">Premium</h1>
+            <p class="sub-hero-sub">Unlimited Entertainment. Any Device. Anytime.</p>
+        </div>
+    </section>
+
+    <div class="sub-page-body">
+
+        <!-- Back button -->
+        <div class="fy-back-row">
+            <button class="btn-ghost fy-back-btn" id="sub-back-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+                Back to Dashboard
+            </button>
+        </div>
+
+        <!-- Pricing Cards -->
+        <section class="sub-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Choose Your Plan</h2>
+                <span class="fy-section-sub">Upgrade or downgrade anytime</span>
+            </div>
+            <div id="sub-pricing-grid" class="sub-pricing-grid"></div>
+        </section>
+
+        <!-- Feature Comparison Table -->
+        <section class="sub-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Compare Plans</h2>
+            </div>
+            <div class="sub-table-wrap">
+                <table class="sub-compare-table">
+                    <thead>
+                        <tr>
+                            <th class="compare-feat-label">Feature</th>
+                            <th>Starter</th>
+                            <th>Premium</th>
+                            <th>Ultimate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sub-compare-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Current Subscription -->
+        <section class="sub-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Current Subscription</h2>
+            </div>
+            <div id="sub-current-plan"></div>
+        </section>
+
+        <!-- Payment Section -->
+        <section class="sub-section" id="sub-payment-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Payment</h2>
+                <span class="fy-section-sub" id="sub-pay-plan-name">Premium — ₹299/month</span>
+            </div>
+            <div class="sub-payment-wrap">
+                <p class="sub-pay-label">Select Payment Method</p>
+                <div id="sub-payment-methods" class="sub-payment-grid"></div>
+                <div class="sub-pay-form">
+                    <div class="sub-pay-row">
+                        <input class="field-input" type="text" placeholder="Cardholder name / UPI ID" id="sub-pay-name">
+                    </div>
+                    <div class="sub-pay-row">
+                        <input class="field-input" type="text" placeholder="Card number or UPI handle" id="sub-pay-number">
+                        <input class="field-input sub-pay-small" type="text" placeholder="MM/YY" id="sub-pay-exp">
+                        <input class="field-input sub-pay-small" type="text" placeholder="CVV" id="sub-pay-cvv">
+                    </div>
+                    <button id="sub-pay-btn" class="btn-primary btn-full sub-pay-cta">Complete Payment</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section class="sub-section">
+            <div class="fy-section-head">
+                <h2 class="fy-section-title">Subscription Settings</h2>
+            </div>
+            <div id="sub-settings-section"></div>
+        </section>
+
+    </div>
+</div>
+
+<!-- ============================================================
      OVERLAY: VIDEO / TRAILER VIEWPORT
      ============================================================ -->
 <div id="trailer-overlay" class="overlay hidden">
@@ -332,5 +575,7 @@
 
 <script src="{{ url_for('static', filename='spatial/api.js') }}"></script>
 <script src="{{ url_for('static', filename='spatial/app.js') }}"></script>
+<script src="{{ url_for('static', filename='spatial/foryou.js') }}"></script>
+<script src="{{ url_for('static', filename='spatial/subscription.js') }}"></script>
 </body>
 </html>

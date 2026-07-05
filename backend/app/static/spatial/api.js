@@ -90,5 +90,26 @@ const API = {
 
     async getProfile() {
         return this.request('/users/profile', 'GET');
-    }
+    },
+
+    // ─── For You & Subscription Methods ───────────────────────────────────
+    async getRecommendations() {
+        return this.request('/api/recommendations', 'GET');
+    },
+
+    async getTrending() {
+        return this.request('/api/trending', 'GET');
+    },
+
+    async getHistory() {
+        return this.request('/api/history', 'GET');
+    },
+
+    async getStats() {
+        return this.request('/api/stats', 'GET');
+    },
+
+    async getSubscription() {
+        return this.request('/api/subscription', 'GET');
+    },
 };

@@ -27,10 +27,12 @@ def create_app(config_name=None):
     from app.routes.auth import auth_bp
     from app.routes.movies import movies_bp
     from app.routes.users import users_bp
+    from app.routes.pages import pages_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(movies_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(pages_bp)
 
     @app.errorhandler(404)
     def not_found(e):
